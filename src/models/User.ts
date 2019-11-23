@@ -42,7 +42,7 @@ export class User extends Model<User> {
   token!: string;
 
   static async hashPassword(password) {
-      const hashedPassword = await bcrypt.hash(password, process.env.HASH_SALT_ROUNDS || 12);
+      const hashedPassword = await bcrypt.hash(password, process.env.HASH_SALT_ROUNDS!);
       return hashedPassword;
   }
 
