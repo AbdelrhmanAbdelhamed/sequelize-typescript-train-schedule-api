@@ -1,0 +1,14 @@
+#env variables
+.env
+
+# tmp
+.idea
+.DS_Store
+
+# lib
+node_modules
+
+# build
+**/*.js
+**/*.js.map
+**/*.d.ts

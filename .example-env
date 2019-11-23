@@ -1,0 +1,13 @@
+ENV = ""
+
+PORT = ""
+
+DB_HOST = ""
+DB_PORT =
+DB_NAME = ""
+DB_USERNAME = ""
+DB_PASSWORD = ""
+DB_DIALECT = ""
+
+AUTH_SECRET_KEY = ""
+HASH.SALT_ROUNDS =
