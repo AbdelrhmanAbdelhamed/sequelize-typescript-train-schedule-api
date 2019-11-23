@@ -16,6 +16,7 @@ export default class UserController {
     return token;
   }
 
+
   @Post("/login", [])
   async login(req: Request, res: Response, next: NextFunction) {
     try {
@@ -42,6 +43,11 @@ export default class UserController {
     } catch (e) {
       next(e);
     }
+  }
+
+  @Use()
+  validateUser(req: Request, res: Response, next: NextFunction) {
+    validateUser(req, res, next);
   }
 
   @Post("/")
@@ -92,11 +98,6 @@ export default class UserController {
     } catch (e) {
       next(e);
     }
-  }
-
-  @Use()
-  validateUser(req: Request, res: Response, next: NextFunction) {
-    validateUser(req, res, next);
   }
 
 }
