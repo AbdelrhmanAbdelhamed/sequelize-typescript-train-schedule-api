@@ -4,8 +4,10 @@
   "description": "",
   "main": "index.ts",
   "scripts": {
-    "start": "node --require ts-node/register src/index.ts",
-    "dev": "ts-node-dev --inspect --respawn ./src src/index.ts"
+    "start": "node build/index.js",
+    "dev": "ts-node-dev --inspect --respawn ./src src/index.ts",
+    "build": "tsc",
+    "postinstall": "npm run build"
   },
   "author": "",
   "license": "ISC",
@@ -32,6 +34,6 @@
     "ts-node": "^3.3.0",
     "ts-node-dev": "^1.0.0-pre.44",
     "tslint": "^5.18.0",
-    "typescript": "^3.5.3"
+    "typescript": "^3.7.2"
   }
 }
