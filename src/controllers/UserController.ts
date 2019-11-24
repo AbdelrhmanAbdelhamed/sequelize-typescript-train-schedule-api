@@ -45,6 +45,11 @@ export default class UserController {
     }
   }
 
+  @Use()
+  validateUser(req: Request, res: Response, next: NextFunction) {
+    validateUser(req, res, next);
+  }
+
   @Post("/")
   async create(req: Request, res: Response, next: NextFunction) {
     try {
@@ -54,11 +59,6 @@ export default class UserController {
     } catch (e) {
       next(e);
     }
-  }
-
-  @Use()
-  validateUser(req: Request, res: Response, next: NextFunction) {
-    validateUser(req, res, next);
   }
 
   @Get('/')
