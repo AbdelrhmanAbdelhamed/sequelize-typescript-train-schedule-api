@@ -17,18 +17,20 @@ export default class StationController {
   @Post("/")
   async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const station: Station = await Station.findOrCreate({
+      const result = await Station.findOrCreate({
          where: { name: req.body.name }
       });
-      if (req.body.line) {
+      if (req.body.line.id) {
         const line = req.body.line;
-        if(station.id) {
-        await station.$add("line", line, {
+        if(result[0].id) {
+          await result[0].$add("line", line.id, {
               through: { stationOrder: line.LineStation.stationOrder }
         });
       }
-    }
+      const station = result[0];
       res.status(201).json(station);
+    }
+  
     } catch (e) {
       next(e);
     }
