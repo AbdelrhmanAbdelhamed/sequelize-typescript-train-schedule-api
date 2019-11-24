@@ -64,7 +64,7 @@ app.use((req: express.Request, res: express.Response, next: express.NextFunction
 
 // handle errors
 app.use(errorhandler({
-  debug: process.env.ENV !== 'production',
+  debug: false,
   // tslint:disable-next-line: no-console
-  log:  process.env.ENV !== 'production' ? console.log : false,
+  log:  false,
 }));
