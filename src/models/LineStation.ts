@@ -20,14 +20,14 @@ export class LineStation extends Model<LineStation> {
   @Column
   lineId!: number;
 
+  @ForeignKey(() => Station)
+  @Column
+  stationId!: number;
+
   @Column({
     unique: "line_stations_stationId_lineId_unique"
   })
   stationOrder!: number;
-
-  @ForeignKey(() => Station)
-  @Column
-  stationId!: number;
 
   @CreatedAt
   @Column({

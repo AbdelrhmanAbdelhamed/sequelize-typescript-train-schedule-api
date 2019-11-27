@@ -5,6 +5,8 @@ import { Station } from "../models/Station";
 import { Line } from "../models/Line";
 import { Train } from "../models/Train";
 import validateUser from '../middlewares/ValidateUser';
+import { LineStation } from '../models/LineStation';
+import { col } from 'sequelize';
 
 @BasePath('/api/stations')
 export default class StationController {
@@ -17,18 +19,18 @@ export default class StationController {
   @Post("/")
   async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await Station.findOrCreate({
+      const [station] = await Station.findOrCreate({
          where: { name: req.body.name }
       });
       if (req.body.line.id) {
         const line = req.body.line;
-        if(result[0].id) {
-          await result[0].$add("line", line.id, {
+        if(station.id) {
+          await station.$add("line", line.id, {
               through: { stationOrder: line.LineStation.stationOrder }
         });
       }
-      const station = result[0];
-      res.status(201).json(station);
+      const lines = await station.$get("lines");
+      res.status(201).json({station, lines});
     }
   
     } catch (e) {
@@ -40,7 +42,8 @@ export default class StationController {
   async getAll(req: Request, res: Response, next: NextFunction) {
     try {
       const stations = await Station.findAll({
-        include: [Line]
+        include: [Line],
+        order: [[col('`lines.LineStation.station_order`'), 'ASC']]
       });
       res.json(stations);
     } catch (e) {
@@ -107,4 +110,20 @@ export default class StationController {
       next(e);
     }
   }
+
+  @Delete("/:id/:lineId")
+  async deleteLine(req: Request, res: Response, next: NextFunction) {
+    try {
+      await LineStation.destroy({
+        where: {
+          stationId: req.params.id,
+          lineId: req.params.lineId
+        }
+      });
+      res.sendStatus(200);
+    } catch (e) {
+      next(e);
+    }
+  }
+
 }

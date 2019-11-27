@@ -7,7 +7,8 @@ import {
   Sequelize,
   ForeignKey,
   BelongsTo,
-  BelongsToMany
+  BelongsToMany,
+  AllowNull
 } from "sequelize-typescript";
 import { DataTypes } from "sequelize";
 
@@ -20,11 +21,18 @@ import { PolicePerson } from "./PolicePerson";
 })
 export class TrainRun extends Model<TrainRun> {
 
-  @Column(DataTypes.DATEONLY)
-  day!: string;
+  @AllowNull(false)
+  @Column({
+    type: DataTypes.DATEONLY,
+    unique: "train_run_date"
+  })
+  day!: Date;
 
   @ForeignKey(() => Train)
-  @Column
+  @AllowNull(false)
+  @Column({
+    unique: "train_run_date"
+  })
   trainId!: number;
 
   @BelongsTo(() => Train)

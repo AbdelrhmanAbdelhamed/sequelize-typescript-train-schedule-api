@@ -15,6 +15,9 @@ import {
 })
 export class User extends Model<User> {
 
+  @Column
+  fullName!: string;
+
   @Unique
   @Column
   username!: string;

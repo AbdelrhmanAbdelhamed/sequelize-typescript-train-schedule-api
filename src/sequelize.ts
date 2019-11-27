@@ -1,6 +1,6 @@
 import { Sequelize } from 'sequelize-typescript';
 
-export const sequelize = new Sequelize("train_schedule", "tamer_soliman", "A.dmin@123", {
+export const sequelize = new Sequelize("train_schedule_test", "tamer_soliman", "A.dmin@123", {
   host:  "localhost",
   port: 3306,
   dialect: "mysql",
