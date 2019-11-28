@@ -3,8 +3,6 @@ import { BasePath, Post, Get, Patch, Delete, Use } from "decorate-express";
 
 import { Train } from "../models/Train";
 import { TrainRun } from "../models/TrainRun";
-import { QueryTypes } from "sequelize";
-import { sequelize } from "../sequelize";
 import { PolicePerson } from "../models/PolicePerson";
 import { Rank } from "../models/Rank";
 import { PoliceDepartment } from "../models/PoliceDepartment";
@@ -13,6 +11,8 @@ import validateUser from "../middlewares/ValidateUser";
 import { LineStation } from "../models/LineStation";
 import { LineStationTrain } from "../models/LineStationTrain";
 import { Line } from "../models/Line";
+import { QueryTypes } from "sequelize";
+import { sequelize } from "../sequelize";
 
 @BasePath("/api/trains")
 export default class TrainController {
@@ -24,17 +24,17 @@ export default class TrainController {
   @Post("/")
   async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const { number, stations} = req.body;
-      const train: any = (await Train.findOrCreate({where:{ number}}))[0];
+      const { number, stations } = req.body;
+      const [train] = await Train.findOrCreate({ where: { number } });
       if (stations) {
         await Promise.all(stations.map(station => {
-          if(station.LineStationTrain.arrivalTime !== null || station.LineStationTrain.departureTime !== null ) {
-          return train.$add("lineStation", station.lineStationId, {
-            through: {
-              ...station.LineStationTrain
-            }
-          });
-        }
+          if (station.LineStationTrain.arrivalTime !== null || station.LineStationTrain.departureTime !== null) {
+            return train.$add("lineStation", station.lineStationId, {
+              through: {
+                ...station.LineStationTrain
+              }
+            });
+          }
         }));
       }
       res.status(201).json(train);
@@ -181,7 +181,7 @@ export default class TrainController {
 
   @Get("/")
   async get(req: Request, res: Response, next: NextFunction) {
-    if (req.query.fromStation && req.query.toStation) {
+    if (req.query.departureStation && req.query.arrivalStation) {
       this.getByStations(req, res, next);
     } else {
       this.getAll(req, res, next);
@@ -286,7 +286,7 @@ export default class TrainController {
         }
       });
 
-      if(count <= 1) {
+      if (count <= 1) {
         await Train.destroy({
           where: {
             id: req.params.id
@@ -302,49 +302,61 @@ export default class TrainController {
 
   private async getByStations(req: Request, res: Response, next: NextFunction) {
     try {
-      const trains = await sequelize.query(
-        // tslint:disable-next-line: max-line-length
-        "SELECT    `Train`.`id`,    `Train`.`number`,    `Train`.`line_id` AS `lineId`,    `Train`.`created_at` AS `createdAt`,    `Train`.`updated_at` AS `UpdatedAt`,    `line`.`id` AS `line.id`,    `line`.`name` AS `line.name`,    `line`.`created_at` AS `line.createdAt`,    `line`.`updated_at` AS `line.UpdatedAt`,    `trainRuns`.`id` AS `trainRuns.id`,    `trainRuns`.`day` AS `trainRuns.day`,    `trainRuns`.`train_id` AS `trainRuns.trainId`,    `trainRuns`.`created_at` AS `trainRuns.createdAt`,    `trainRuns`.`updated_at` AS `trainRuns.UpdatedAt`,    `trainRuns->policePeople`.`id` AS `trainRuns.policePeople.id`,    `trainRuns->policePeople`.`name` AS `trainRuns.policePeople.name`,    `trainRuns->policePeople`.`phone_number` AS `trainRuns.policePeople.phoneNumber`,    `trainRuns->policePeople`.`rank_id` AS `trainRuns.policePeople.rankId`,    `trainRuns->policePeople`.`police_department_id` AS `trainRuns.policePeople.policeDepartmentId`,    `trainRuns->policePeople`.`created_at` AS `trainRuns.policePeople.createdAt`,    `trainRuns->policePeople`.`updated_at` AS `trainRuns.policePeople.UpdatedAt`,    `trainRuns->policePeople->TrainRunPolicePerson`.`train_run_id` AS `trainRuns.policePeople.TrainRunPolicePerson.trainRunId`,    `trainRuns->policePeople->TrainRunPolicePerson`.`police_person_id` AS `trainRuns.policePeople.TrainRunPolicePerson.policePersonId`,    `trainRuns->policePeople->TrainRunPolicePerson`.`created_at` AS `trainRuns.policePeople.TrainRunPolicePerson.createdAt`,    `trainRuns->policePeople->TrainRunPolicePerson`.`updated_at` AS `trainRuns.policePeople.TrainRunPolicePerson.UpdatedAt`,    `trainRuns->policePeople->rank`.`id` AS `trainRuns.policePeople.rank.id`,    `trainRuns->policePeople->rank`.`name` AS `trainRuns.policePeople.rank.name`,    `trainRuns->policePeople->rank`.`created_at` AS `trainRuns.policePeople.rank.createdAt`,    `trainRuns->policePeople->rank`.`updated_at` AS `trainRuns.policePeople.rank.UpdatedAt`,    `trainRuns->policePeople->policeDepartment`.`id` AS `trainRuns.policePeople.policeDepartment.id`,    `trainRuns->policePeople->policeDepartment`.`name` AS `trainRuns.policePeople.policeDepartment.name`,    `trainRuns->policePeople->policeDepartment`.`created_at` AS `trainRuns.policePeople.policeDepartment.createdAt`,    `trainRuns->policePeople->policeDepartment`.`updated_at` AS `trainRuns.policePeople.policeDepartment.UpdatedAt`FROM    `trains` AS `Train`LEFT OUTER JOIN `lines` AS `line`ON    `Train`.`line_id` = `line`.`id`LEFT OUTER JOIN `train_runs` AS `trainRuns`ON    `Train`.`id` = `trainRuns`.`train_id`LEFT OUTER JOIN(        `train_run_police_people` AS `trainRuns->policePeople->TrainRunPolicePerson`    INNER JOIN `police_people` AS `trainRuns->policePeople`    ON        `trainRuns->policePeople`.`id` = `trainRuns->policePeople->TrainRunPolicePerson`.`police_person_id`    )ON    `trainRuns`.`id` = `trainRuns->policePeople->TrainRunPolicePerson`.`train_run_id`LEFT OUTER JOIN `ranks` AS `trainRuns->policePeople->rank`ON    `trainRuns->policePeople`.`rank_id` = `trainRuns->policePeople->rank`.`id`LEFT OUTER JOIN `police_departments` AS `trainRuns->policePeople->policeDepartment`ON    `trainRuns->policePeople`.`police_department_id` = `trainRuns->policePeople->policeDepartment`.`id`JOIN line_stations from_line_stations ON    (        from_line_stations.line_id = Train.line_id    )JOIN stations from_station ON    (        from_station.id = from_line_stations.station_id    )JOIN line_stations to_line_stations ON    (        to_line_stations.line_id = Train.line_id    )JOIN stations to_station ON    (        to_station.id = to_line_stations.station_id) WHERE   from_station.name = $fromStation AND to_station.name = $toStation AND from_line_stations.station_order <= to_line_stations.station_order",
+      const trainsQuery = await sequelize.query(
+        `
+        SELECT 
+            trains.id
+        FROM
+            trains
+                JOIN
+            line_station_trains AS departure_line_station_trains ON departure_line_station_trains.train_id = trains.id
+                JOIN
+            line_station_trains arrival_line_station_trains ON arrival_line_station_trains.train_id = trains.id
+                JOIN
+            line_stations AS departure_line_station ON departure_line_station.id = departure_line_station_trains.line_station_id
+                JOIN
+            line_stations AS arrival_line_station ON arrival_line_station.id = arrival_line_station_trains.line_station_id
+                JOIN
+            stations AS departure_stations ON departure_stations.id = departure_line_station.station_id
+                JOIN
+            stations AS arrival_stations ON arrival_stations.id = arrival_line_station.station_id
+        WHERE
+            departure_stations.name = $departureStation
+                AND departure_line_station_trains.is_deprature = 1
+                AND arrival_stations.name = $arrivalStation
+                AND arrival_line_station_trains.is_arrival = 1
+                AND departure_line_station.station_order <= arrival_line_station.station_order
+        `,
         {
           bind: {
-            fromStation: req.query.fromStation,
-            toStation: req.query.toStation
+            departureStation: req.query.departureStation,
+            arrivalStation: req.query.arrivalStation
           },
-          model: Train,
-          mapToModel: true,
-          nest: true,
           raw: true,
           type: QueryTypes.SELECT
         }
       );
 
-      const result: any[] = [];
-
-      trains.forEach(train => {
-        train.trainRuns.policePeople = [train.trainRuns.policePeople];
-        train.trainRuns = train.trainRuns.id ? [train.trainRuns] : [];
-
-        const NOT_FOUND = -1;
-        const trainIndex = result.findIndex(
-          resultTrain => resultTrain.id === train.id
-        );
-
-        if (trainIndex === NOT_FOUND) {
-          result.push(train);
-        } else {
-          const trainRunIndex = result[trainIndex].trainRuns.findIndex(
-            trainRunResult => trainRunResult.id === train.trainRuns[0].id
-          );
-          if (trainRunIndex === NOT_FOUND) {
-            result[trainIndex].trainRuns.push(train.trainRuns[0]);
-          } else {
-            result[trainIndex].trainRuns[trainRunIndex].policePeople.push(
-              train.trainRuns[0].policePeople[0]
-            );
-          }
-        }
+      const trains = await Train.findAll({
+        where: {
+          id: trainsQuery.map(train => train.id)
+        },
+        include: [
+          {
+            model: TrainRun,
+            include: [
+              {
+                model: PolicePerson,
+                include: [Rank, PoliceDepartment]
+              }
+            ]
+          },
+          Line,
+          LineStation
+        ]
       });
-      res.json(result);
+
+      res.json(trains);
     } catch (e) {
       next(e);
     }
@@ -363,7 +375,8 @@ export default class TrainController {
               }
             ]
           },
-          Line
+          Line,
+          LineStation
         ]
       });
       res.json(trains);
