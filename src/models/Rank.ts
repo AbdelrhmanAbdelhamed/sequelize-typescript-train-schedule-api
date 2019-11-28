@@ -32,6 +32,6 @@ export class Rank extends Model<Rank> {
   @Column({
     defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
   })
-  UpdatedAt?: Date;
+  updatedAt?: Date;
 
 }

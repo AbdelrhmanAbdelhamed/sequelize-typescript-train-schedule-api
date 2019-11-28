@@ -5,16 +5,27 @@ import {
   Table,
   ForeignKey,
   UpdatedAt,
-  Sequelize
+  Sequelize,
+  BelongsToMany
 } from "sequelize-typescript";
 
 import { Line } from "./Line";
 import { Station } from "./Station";
+import { LineStationTrain } from "./LineStationTrain";
+import { Train } from "./Train";
+import { DataTypes } from "sequelize";
 
 @Table({
   underscored: true
 })
 export class LineStation extends Model<LineStation> {
+
+  @Column({
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  })
+  id!: number;
 
   @ForeignKey(() => Line)
   @Column
@@ -29,6 +40,25 @@ export class LineStation extends Model<LineStation> {
   })
   stationOrder!: number;
 
+  @BelongsToMany(() => Train, {
+    through: {
+      model: () => LineStationTrain,
+      unique: false
+    },
+    constraints: false
+  })
+  trains?: Array<Train & {LineStationTrain: LineStationTrain}>;
+  
+
+  @BelongsToMany(() => Line, {
+    through: {
+      model: () => LineStationTrain,
+      unique: false
+    },
+    constraints: false
+  })
+  lines?: Array<Line & {LineStationTrain: LineStationTrain}>;
+
   @CreatedAt
   @Column({
     defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
@@ -39,6 +69,6 @@ export class LineStation extends Model<LineStation> {
   @Column({
     defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
   })
-  UpdatedAt?: Date;
+  updatedAt?: Date;
 
 }

@@ -2,7 +2,6 @@ import { Request, Response, NextFunction } from "express";
 import { BasePath, Post, Get, Patch, Delete, Use } from "decorate-express";
 
 import { Train } from "../models/Train";
-import { Line } from "../models/Line";
 import { TrainRun } from "../models/TrainRun";
 import { QueryTypes } from "sequelize";
 import { sequelize } from "../sequelize";
@@ -11,6 +10,9 @@ import { Rank } from "../models/Rank";
 import { PoliceDepartment } from "../models/PoliceDepartment";
 import { Station } from "../models/Station";
 import validateUser from "../middlewares/ValidateUser";
+import { LineStation } from "../models/LineStation";
+import { LineStationTrain } from "../models/LineStationTrain";
+import { Line } from "../models/Line";
 
 @BasePath("/api/trains")
 export default class TrainController {
@@ -22,7 +24,19 @@ export default class TrainController {
   @Post("/")
   async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const train = await Train.create(req.body);
+      const { number, stations} = req.body;
+      const train: any = (await Train.findOrCreate({where:{ number}}))[0];
+      if (stations) {
+        await Promise.all(stations.map(station => {
+          if(station.LineStationTrain.arrivalTime !== null || station.LineStationTrain.departureTime !== null ) {
+          return train.$add("lineStation", station.lineStationId, {
+            through: {
+              ...station.LineStationTrain
+            }
+          });
+        }
+        }));
+      }
       res.status(201).json(train);
     } catch (e) {
       next(e);
@@ -80,6 +94,58 @@ export default class TrainController {
     }
   }
 
+  @Post("/:id/stations")
+  async addStation(req: Request, res: Response, next: NextFunction) {
+    try {
+      const train: Train = await Train.findByPk(req.params.id);
+      const stations = req.body;
+      if (train) {
+        if (stations) {
+          await Promise.all(stations.map(station => {
+            return train.$add("lineStation", station.lineStationId, {
+              through: {
+                ...station.LineStationTrain
+              }
+            });
+          }));
+        }
+      }
+      res.json(stations);
+    } catch (e) {
+      next(e);
+    }
+  }
+
+  @Delete("/:id/stations/:lineStationId")
+  async deleteLineStation(req: Request, res: Response, next: NextFunction) {
+    try {
+      await LineStationTrain.destroy({
+        where: {
+          trainId: req.params.id,
+          lineStationId: req.params.lineStationId
+        }
+      });
+      res.sendStatus(200);
+    } catch (e) {
+      next(e);
+    }
+  }
+
+  @Patch("/:id/stations/:lineStationId")
+  async updateStation(req: Request, res: Response, next: NextFunction) {
+    try {
+      await LineStationTrain.update(req.body, {
+        where: {
+          trainId: req.params.id,
+          lineStationId: req.params.lineStationId
+        }
+      });
+      res.sendStatus(200);
+    } catch (e) {
+      next(e);
+    }
+  }
+
   @Delete("/:trainId/runs/:id")
   async deleteRun(req: Request, res: Response, next: NextFunction) {
     try {
@@ -128,10 +194,6 @@ export default class TrainController {
       const train = await Train.findByPk(req.params.id, {
         include: [
           {
-            model: Line,
-            include: [Station]
-          },
-          {
             model: TrainRun,
             include: [
               {
@@ -139,10 +201,42 @@ export default class TrainController {
                 include: [Rank, PoliceDepartment]
               }
             ]
-          }
+          },
+          Line
         ]
       });
       res.json(train);
+    } catch (e) {
+      next(e);
+    }
+  }
+
+  @Get("/:id/stations")
+  async getStations(req: Request, res: Response, next: NextFunction) {
+    try {
+      const train: Train = await Train.findByPk(req.params.id, { include: [LineStation] });
+      let stations
+      if (train && train.lineStations) {
+        stations = await Promise.all(train.lineStations.map(async lineStation => {
+          const stationItem = await Station.findByPk(lineStation.stationId);
+          return {
+            id: stationItem.id,
+            name: stationItem.name,
+            trainId: train.id,
+            trainNumber: train.number,
+            lineStationId: lineStation.id,
+            LineStationTrain: {
+              arrivalTime: lineStation.LineStationTrain.arrivalTime,
+              departureTime: lineStation.LineStationTrain.departureTime,
+              isArrival: lineStation.LineStationTrain.isArrival,
+              isDeprature: lineStation.LineStationTrain.isDeprature,
+              createdAt: lineStation.LineStationTrain.createdAt,
+              updatedAt: lineStation.LineStationTrain.updatedAt
+            }
+          };
+        }));
+      }
+      res.json(stations);
     } catch (e) {
       next(e);
     }
@@ -170,6 +264,36 @@ export default class TrainController {
           id: req.params.id
         }
       });
+      res.sendStatus(200);
+    } catch (e) {
+      next(e);
+    }
+  }
+
+  @Delete("/:id/lines/:lineId")
+  async deleteLine(req: Request, res: Response, next: NextFunction) {
+    try {
+      await LineStationTrain.destroy({
+        where: {
+          trainId: req.params.id,
+          lineId: req.params.lineId
+        }
+      });
+
+      const count: any = await LineStationTrain.count({
+        where: {
+          trainId: req.params.id
+        }
+      });
+
+      if(count <= 1) {
+        await Train.destroy({
+          where: {
+            id: req.params.id
+          }
+        })
+      }
+
       res.sendStatus(200);
     } catch (e) {
       next(e);
@@ -231,10 +355,6 @@ export default class TrainController {
       const trains = await Train.findAll({
         include: [
           {
-            model: Line,
-            include: [Station]
-          },
-          {
             model: TrainRun,
             include: [
               {
@@ -242,7 +362,8 @@ export default class TrainController {
                 include: [Rank, PoliceDepartment]
               }
             ]
-          }
+          },
+          Line
         ]
       });
       res.json(trains);

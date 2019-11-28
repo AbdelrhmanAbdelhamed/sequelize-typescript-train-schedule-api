@@ -53,6 +53,6 @@ export class PolicePerson extends Model<PolicePerson> {
   @Column({
     defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
   })
-  UpdatedAt?: Date;
+  updatedAt?: Date;
 
 }

@@ -5,7 +5,6 @@ import {
   Table,
   UpdatedAt,
   BelongsToMany,
-  HasMany,
   Sequelize,
   Unique
 } from "sequelize-typescript";
@@ -13,7 +12,7 @@ import {
 import { Station } from "./Station";
 import { LineStation } from "./LineStation";
 import { Train } from "./Train";
-
+import { LineStationTrain } from "./LineStationTrain";
 @Table({
   underscored: true
 })
@@ -25,9 +24,15 @@ export class Line extends Model<Line> {
 
   @BelongsToMany(() => Station, () => LineStation)
   stations?: Array<Station & { LineStation: LineStation }>;
-
-  @HasMany(() => Train)
-  trains?: Train[];
+  
+  @BelongsToMany(() => Train, {
+    through: {
+      model: () => LineStationTrain,
+      unique: false
+    },
+    constraints: false
+  })
+  trains?: Array<Train & {LineStationTrain: LineStationTrain}>;
 
   @CreatedAt
   @Column({
@@ -39,6 +44,6 @@ export class Line extends Model<Line> {
   @Column({
     defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
   })
-  UpdatedAt?: Date;
+  updatedAt?: Date;
 
 }

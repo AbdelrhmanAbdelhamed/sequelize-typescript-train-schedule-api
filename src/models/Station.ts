@@ -31,7 +31,7 @@ export class Station extends Model<Station> {
   @Column({
     defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
   })
-  UpdatedAt?: Date;
+  updatedAt?: Date;
 
   @BelongsToMany(() => Line, () => LineStation)
   lines?: Array<Line & {LineStation: LineStation}>;

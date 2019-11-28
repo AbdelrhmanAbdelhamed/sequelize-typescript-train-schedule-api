@@ -51,6 +51,6 @@ export class TrainRun extends Model<TrainRun> {
   @Column({
     defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
   })
-  UpdatedAt?: Date;
+  updatedAt?: Date;
 
 }

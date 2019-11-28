@@ -40,7 +40,7 @@ export class User extends Model<User> {
   @Column({
     defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
   })
-  UpdatedAt?: Date;
+  updatedAt?: Date;
 
   token!: string;
 

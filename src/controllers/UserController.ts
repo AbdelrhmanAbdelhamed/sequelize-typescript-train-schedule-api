@@ -16,7 +16,6 @@ export default class UserController {
     return token;
   }
 
-
   @Post("/login", [])
   async login(req: Request, res: Response, next: NextFunction) {
     try {

@@ -34,6 +34,6 @@ export class TrainRunPolicePerson extends Model<TrainRunPolicePerson> {
   @Column({
     defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
   })
-  UpdatedAt?: Date;
+  updatedAt?: Date;
 
 }

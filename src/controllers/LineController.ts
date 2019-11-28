@@ -9,7 +9,7 @@ import { PolicePerson } from '../models/PolicePerson';
 import { Rank } from '../models/Rank';
 import { PoliceDepartment } from '../models/PoliceDepartment';
 import validateUser from '../middlewares/ValidateUser';
-import { col } from 'sequelize';
+import { literal } from 'sequelize';
 
 @BasePath('/api/lines')
 export default class LineController {
@@ -32,19 +32,61 @@ export default class LineController {
   @Get('/')
   async getAll(req: Request, res: Response, next: NextFunction) {
     try {
-      const lines = await Line.findAll({
-        include: [{
+      const lines: Line[] = await Line.findAll({
+        include: [Station, {
           model: Train,
-          include: [{
-            model: TrainRun,
-            include: [ {
-              model: PolicePerson,
-              include: [ Rank, PoliceDepartment ]
-            } ]
-          }]
-        }, Station],
-        order: [[col('`stations.LineStation.station_order`'), 'ASC']]
+          include: [
+            {
+              model: TrainRun,
+              include: [
+                {
+                  model: PolicePerson,
+                  include: [Rank, PoliceDepartment]
+                }
+              ]
+            }
+          ]
+        }],
+        order: [[literal('`stations.LineStation.stationOrder`'), 'ASC']]
       });
+     /* const linesWithTrains = await Promise.all(lines.map(async line => {
+        let lineTrains = await Train.findAll({
+          where: {
+            lineId: line.id,
+          },
+          include: [{
+            model: LineStation,
+            required: true,
+          }]
+        })
+        lineTrains = lineTrains.map(lineTrain => {
+          let train = lineTrain.trains[0];
+          return {
+            id: train.id,
+            number: train.number,
+            createdAt: train.createdAt,
+            updatedAt: train.updatedAt,
+            lineStationTrain: train.LineStationTrain,
+            LineStation: {
+              id: lineTrain.id,
+              lineId: lineTrain.lineId,
+              stationId: lineTrain.stationId,
+              stationOrder: lineTrain.stationOrder,
+              createdAt: lineTrain.createdAt,
+              updatedAt: lineTrain.updatedAt
+            }
+          }
+        })
+        const lineWithTrains = {
+          id: line.id,
+          name: line.name,
+          createdAt: line.createdAt,
+          updatedAt: line.updatedAt,
+          stations: [...line.stations!],
+          trains: [...lineTrains]
+        }
+        return lineWithTrains;
+      })); */
       res.json(lines);
     } catch (e) {
       next(e);
@@ -55,38 +97,60 @@ export default class LineController {
   async getById(req: Request, res: Response, next: NextFunction) {
     try {
       const line = await Line.findByPk(req.params.id, {
+        include: [Station, {
+          model: Train,
+          include: [
+            {
+              model: TrainRun,
+              include: [
+                {
+                  model: PolicePerson,
+                  include: [Rank, PoliceDepartment]
+                }
+              ]
+            }
+          ]
+        }],
+        order: [[literal('`stations.LineStation.stationOrder`'), 'ASC']]
+      });
+      /* let lineTrains = await LineStation.findAll({
+        where: {
+          lineId: line.id,
+        },
         include: [{
           model: Train,
-          include: [{
-            model: TrainRun,
-            include: [ {
-              model: PolicePerson,
-              include: [ Rank, PoliceDepartment ]
-            } ]
-          }]
-        }, Station],
-        order: [[col('`stations.LineStation.station_order`'), 'ASC']]
-      });
-      res.json(line);
-    } catch (e) {
-      next(e);
-    }
-  }
-
-  @Get('/:id/trains')
-  async getTrains(req: Request, res: Response, next: NextFunction) {
-    try {
-      const trains = await Train.findAll({
-        where: { line_id: req.params.id },
-        include: [{
-          model: TrainRun,
-          include: [ {
-            model: PolicePerson,
-            include: [ Rank, PoliceDepartment ]
-          } ]
+          required: true
         }]
       });
-      res.json(trains);
+
+      lineTrains = lineTrains.map(lineTrain => {
+        let train = lineTrain.trains[0];
+        return {
+          id: train.id,
+          number: train.number,
+          createdAt: train.createdAt,
+          updatedAt: train.updatedAt,
+          lineStationTrain: train.LineStationTrain,
+          LineStation: {
+            id: lineTrain.id,
+            lineId: lineTrain.lineId,
+            stationId: lineTrain.stationId,
+            stationOrder: lineTrain.stationOrder,
+            createdAt: lineTrain.createdAt,
+            updatedAt: lineTrain.updatedAt
+          }
+        }
+      })
+
+      const lineWithTrains = {
+        id: line.id,
+        name: line.name,
+        createdAt: line.createdAt,
+        updatedAt: line.updatedAt,
+        stations: [...line.stations!],
+        trains: [...lineTrains]
+      } */
+      res.json(line);
     } catch (e) {
       next(e);
     }
@@ -103,14 +167,14 @@ export default class LineController {
             model: Train,
             include: [{
               model: TrainRun,
-              include: [ {
+              include: [{
                 model: PolicePerson,
-                include: [ Rank, PoliceDepartment ]
-              } ]
+                include: [Rank, PoliceDepartment]
+              }]
             }]
           }]
         }],
-        order: [[col('`stations.LineStation.station_order`'), 'ASC']]
+        order: [[literal('`lines.LineStation.stationOrder`'), 'ASC']]
       });
       res.json(stations);
     } catch (e) {
@@ -125,7 +189,7 @@ export default class LineController {
         where: {
           id: req.params.id
         }
-    });
+      });
       res.sendStatus(200);
     } catch (e) {
       next(e);
@@ -139,7 +203,7 @@ export default class LineController {
         where: {
           id: req.params.id
         }
-    });
+      });
       res.sendStatus(200);
     } catch (e) {
       next(e);
