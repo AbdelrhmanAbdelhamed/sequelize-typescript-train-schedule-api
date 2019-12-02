@@ -24,7 +24,7 @@ export class Role extends Model<Role> {
     nameArabic!: string;
 
     @Column
-    Description!: string;
+    description!: string;
     
     @HasMany(() => User)
     users?: User[];

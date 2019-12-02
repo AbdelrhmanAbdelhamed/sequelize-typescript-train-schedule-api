@@ -38,7 +38,6 @@ export default async function validateUser(
       });
     }
   } catch (e) {
-    console.log(e);
     res.status(401).send({
       code: 401,
       message: "Unauthorized!"

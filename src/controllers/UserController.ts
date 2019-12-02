@@ -2,7 +2,7 @@ import * as bcrypt from "bcryptjs";
 import * as jwt from "jsonwebtoken";
 import * as util from "util";
 import { Request, Response, NextFunction } from "express";
-import { BasePath, Post, Use, Get, Delete, Patch } from "decorate-express";
+import { BasePath, Post, Use, Get, Delete, Patch, Put } from "decorate-express";
 
 const { packRules } = require('@casl/ability/extra');
 
@@ -10,6 +10,7 @@ import { User } from "../models/User";
 import validateUser from "../middlewares/ValidateUser";
 import { createAbilities, defineAbilitiesFor } from "../middlewares/DefineAbilitiesFor";
 import { Role } from "../models/Role";
+import { Train } from "../models/Train";
 
 @BasePath("/api/users")
 export default class UserController {
@@ -66,8 +67,27 @@ export default class UserController {
     try {
       if (req.body.password) req.body.password = await User.hashPassword(req.body.password);
       const user: User = await User.create(req.body);
+      if(user && req.body.role) {
+        await user.$set("role", req.body.role.id);
+      }
       res.status(201).json(user);
     } catch (e) {
+      next(e);
+    }
+  }
+
+  @Put("/:id/trains")
+  async assignTrains(req: Request, res: Response, next: NextFunction) {
+    try {
+      const user: User = await User.findByPk(req.params.id);
+      const trains = req.body;
+      if (user) {
+        if (trains) {
+          await user.$set("trains", trains.map(train => train.id));
+        }
+      }
+      res.json(trains);
+     } catch (e) {
       next(e);
     }
   }
@@ -75,7 +95,7 @@ export default class UserController {
   @Get('/')
   async getAll(req: Request, res: Response, next: NextFunction) {
     try {
-      const users = await User.findAll({ attributes: ['id', 'username', 'fullName'], include: [Role] });
+      const users = await User.findAll({ attributes: ['id', 'username', 'fullName'], include: [Role, Train] });
       res.json(users);
     } catch (e) {
       next(e);

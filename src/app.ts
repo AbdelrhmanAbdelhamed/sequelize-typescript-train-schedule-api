@@ -16,6 +16,7 @@ import PolicePersonController from './controllers/PolicePersonController';
 import PoliceDepartmentController from './controllers/PoliceDepartmentController';
 import RankController from './controllers/RankController';
 import UserController from './controllers/UserController';
+import RoleController from './controllers/RoleController';
 
 export const app = express();
 
@@ -43,6 +44,8 @@ registerRoutes(app, new PoliceDepartmentController());
 registerRoutes(app, new RankController());
 registerRoutes(app, new PolicePersonController());
 registerRoutes(app, new UserController());
+registerRoutes(app, new RoleController());
+
 
 /*
 // create a rotating write stream

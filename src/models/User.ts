@@ -38,7 +38,7 @@ export class User extends Model<User> {
   @BelongsTo(() => Role)
   role?: Role;
 
-  @BelongsToMany(() => User, () => UserTrain)
+  @BelongsToMany(() => Train, () => UserTrain)
   trains?: Array<Train & { userTrain: UserTrain }>;
 
   @CreatedAt

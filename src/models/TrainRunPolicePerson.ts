@@ -10,6 +10,7 @@ import {
 
 import { TrainRun } from "./TrainRun";
 import { PolicePerson } from "./PolicePerson";
+import { Station } from "./Station";
 
 @Table({
   underscored: true
