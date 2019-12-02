@@ -10,12 +10,13 @@ import { Rank } from '../models/Rank';
 import { PoliceDepartment } from '../models/PoliceDepartment';
 import validateUser from '../middlewares/ValidateUser';
 import { literal } from 'sequelize';
+import { User } from '../models/User';
 
 @BasePath('/api/lines')
 export default class LineController {
 
   @Use()
-  validateUser(req: Request, res: Response, next: NextFunction) {
+  validateUser(req: Request & {ability: any, user: User}, res: Response, next: NextFunction) {
     validateUser(req, res, next);
   }
 

@@ -30,7 +30,7 @@ app.use(helmet({
 }));
 
 // middleware for parsing application/x-www-form-urlencoded
-app.use(bodyParser.urlencoded({extended: false}));
+app.use(bodyParser.urlencoded({ extended: false }));
 
 // middleware for json body parsing
 app.use(bodyParser.json());
@@ -57,14 +57,14 @@ app.use(morgan('combined', { stream: accessLogStream }));
 
 // handle 404 error
 app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
- const err = new Error('Endpoint Not Found');
- res.status(404);
- next(err);
+  const err = new Error('Endpoint Not Found');
+  res.status(404);
+  next(err);
 });
 
 // handle errors
 app.use(errorhandler({
   debug: true,
   // tslint:disable-next-line: no-console
-  log:  console.log,
+  log: false,
 }));

@@ -4,12 +4,13 @@ import { BasePath, Post, Get, Put, Use } from 'decorate-express';
 import { PolicePerson } from "../models/PolicePerson";
 import { Rank } from '../models/Rank';
 import validateUser from '../middlewares/ValidateUser';
+import { User } from '../models/User';
 
 @BasePath('/api/ranks')
 export default class RankController {
 
   @Use()
-  validateUser(req: Request, res: Response, next: NextFunction) {
+  validateUser(req: Request & {ability: any, user: User}, res: Response, next: NextFunction) {
     validateUser(req, res, next);
   }
 

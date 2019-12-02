@@ -8,12 +8,49 @@ import {
   Sequelize,
   Unique,
   BelongsToMany,
+  Scopes,
 } from "sequelize-typescript";
 
 import { TrainRun } from "./TrainRun";
 import { LineStation } from "./LineStation";
 import { LineStationTrain } from "./LineStationTrain";
 import { Line } from "./Line";
+import { User } from "./User";
+import { UserTrain } from "./UserTrain";
+import toSequelizeQuery from "../utils/toSequelizeQuery";
+import { Rank } from "./Rank";
+import { PolicePerson } from "./PolicePerson";
+import { PoliceDepartment } from "./PoliceDepartment";
+import isEmpty from "../utils/isEmpty";
+
+@Scopes(() => ({
+  accessibleBy: function(ability, action = 'read') {
+    const conditions = toSequelizeQuery(ability, 'UserTrain');
+    const includeConditions = !isEmpty(conditions);
+    return {
+      include: [
+        {
+          model: TrainRun,
+          include: [
+            {
+              model: PolicePerson,
+              include: [Rank, PoliceDepartment]
+            }
+          ]
+        },
+        Line,
+        LineStation,
+        {
+          model: User,
+          required: includeConditions,
+          through: {
+            where: conditions
+          }
+        }
+      ]
+      }
+  }
+}))
 
 @Table({
   underscored: true
@@ -31,19 +68,21 @@ export class Train extends Model<Train> {
     through: {
       model: () => LineStationTrain,
       unique: false
-    },
-    constraints: false
+    }
   })
   lineStations?: Array<LineStation & { LineStationTrain: LineStationTrain }>;
 
   @BelongsToMany(() => Line, {
     through: {
       model: () => LineStationTrain,
-      unique: false
-    },
-    constraints: false
+      unique: false,
+      foreignKey: 'train_id'
+    }
   })
   lines?: Array<Line & { LineStationTrain: LineStationTrain }>;
+
+  @BelongsToMany(() => User, () => UserTrain)
+  users?: Array<User & { userTrain: UserTrain }>;
 
   @CreatedAt
   @Column({

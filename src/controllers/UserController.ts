@@ -4,24 +4,28 @@ import * as util from "util";
 import { Request, Response, NextFunction } from "express";
 import { BasePath, Post, Use, Get, Delete, Patch } from "decorate-express";
 
+const { packRules } = require('@casl/ability/extra');
+
 import { User } from "../models/User";
 import validateUser from "../middlewares/ValidateUser";
+import { createAbilities, defineAbilitiesFor } from "../middlewares/DefineAbilitiesFor";
+import { Role } from "../models/Role";
 
 @BasePath("/api/users")
 export default class UserController {
 
-  static async generateToken(user: User) {
+  static async generateToken(userId: any, userRole:any,  rules: any) {
     const jwtSignPromise = util.promisify(jwt.sign);
-    const token = await jwtSignPromise({ userId: user.id, isAdmin: user.isAdmin }, process.env.AUTH_SECRET_KEY!);
+    const token = await jwtSignPromise({ userId, userRole, rules }, process.env.AUTH_SECRET_KEY!);
     return token;
   }
 
   @Post("/login", [])
-  async login(req: Request, res: Response, next: NextFunction) {
+  async login(req: Request & { ability: any, user: User }, res: Response, next: NextFunction) {
     try {
       const { username, password } = req.body;
 
-      const user: User = await User.findOne({ where: { username } });
+      const user: User = await User.findOne({ where: { username }, include: [Role] });
       if (!user)
         return res.status(404).json({
           code: 404,
@@ -34,8 +38,11 @@ export default class UserController {
           code: 401,
           message: "Password not valid!"
         });
-
-      const token = await UserController.generateToken(user);
+      req.user = user.get({
+        plain: true
+      }) as any;
+      const ability = await defineAbilitiesFor(req.user);
+      const token = await UserController.generateToken(user.id, user.role, packRules(ability.rules));
       res
         .status(200)
         .json({ user, token });
@@ -45,8 +52,13 @@ export default class UserController {
   }
 
   @Use()
-  validateUser(req: Request, res: Response, next: NextFunction) {
-    validateUser(req, res, next);
+  async validateUser(req: Request & { ability: any, user: User } & { ability: any, user: User }, res: Response, next: NextFunction) {
+    await validateUser(req, res, next);
+  }
+
+ @Use()
+  async createAbilities(req: Request & { ability: any, user: User }, res: Response, next: NextFunction) {
+    await createAbilities(req, res, next);
   }
 
   @Post("/")
@@ -63,7 +75,7 @@ export default class UserController {
   @Get('/')
   async getAll(req: Request, res: Response, next: NextFunction) {
     try {
-      const users = await User.findAll({attributes: ['id', 'username', 'isAdmin']});
+      const users = await User.findAll({ attributes: ['id', 'username', 'fullName'], include: [Role] });
       res.json(users);
     } catch (e) {
       next(e);
@@ -78,7 +90,7 @@ export default class UserController {
         where: {
           id: req.params.id
         }
-    });
+      });
       res.sendStatus(200);
     } catch (e) {
       next(e);
@@ -92,7 +104,7 @@ export default class UserController {
         where: {
           id: req.params.id
         }
-    });
+      });
       res.sendStatus(200);
     } catch (e) {
       next(e);

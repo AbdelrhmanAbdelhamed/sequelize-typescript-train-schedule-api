@@ -6,6 +6,7 @@ const port = process.env.Port || 3000;
 
 (async () => {
   await sequelize.sync({force: false});
+
   createServer(app)
     .listen(
       port,

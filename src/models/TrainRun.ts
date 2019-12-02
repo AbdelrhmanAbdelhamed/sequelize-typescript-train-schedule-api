@@ -8,13 +8,47 @@ import {
   ForeignKey,
   BelongsTo,
   BelongsToMany,
-  AllowNull
+  AllowNull,
+  Scopes
 } from "sequelize-typescript";
 import { DataTypes } from "sequelize";
 
 import { Train } from "./Train";
 import { TrainRunPolicePerson } from "./TrainRunPolicePerson";
 import { PolicePerson } from "./PolicePerson";
+import toSequelizeQuery from "../utils/toSequelizeQuery";
+import { Rank } from "./Rank";
+import { PoliceDepartment } from "./PoliceDepartment";
+import { User } from "./User";
+import isEmpty from "../utils/isEmpty";
+
+@Scopes(() => ({
+  accessibleBy: function (ability, action = 'read') {
+    const conditions = toSequelizeQuery(ability, 'UserTrain');
+    const includeConditions = !isEmpty(conditions);
+    return {
+      include: [
+        {
+          model: Train,
+          required: includeConditions,
+          include: [
+            {
+              model: User,
+              required: includeConditions,
+              through: {
+                where: conditions
+              }
+            }
+          ]
+        },
+        {
+          model: PolicePerson,
+          include: [Rank, PoliceDepartment]
+        }
+      ]
+    }
+  }
+}))
 
 @Table({
   underscored: true

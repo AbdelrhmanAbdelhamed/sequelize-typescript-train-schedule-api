@@ -4,12 +4,13 @@ import { BasePath, Post, Get, Put, Use } from 'decorate-express';
 import { PoliceDepartment } from "../models/PoliceDepartment";
 import { PolicePerson } from '../models/PolicePerson';
 import validateUser from '../middlewares/ValidateUser';
+import { User } from '../models/User';
 
 @BasePath('/api/PoliceDepartments')
 export default class PoliceDepartmentController {
 
   @Use()
-  validateUser(req: Request, res: Response, next: NextFunction) {
+  validateUser(req: Request & {ability: any, user: User}, res: Response, next: NextFunction) {
     validateUser(req, res, next);
   }
 

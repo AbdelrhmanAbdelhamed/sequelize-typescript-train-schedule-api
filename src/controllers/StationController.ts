@@ -7,12 +7,13 @@ import { Train } from "../models/Train";
 import validateUser from '../middlewares/ValidateUser';
 import { LineStation } from '../models/LineStation';
 import { col } from 'sequelize';
+import { User } from '../models/User';
 
 @BasePath('/api/stations')
 export default class StationController {
 
   @Use()
-  validateUser(req: Request, res: Response, next: NextFunction) {
+  validateUser(req: Request & {ability: any, user: User}, res: Response, next: NextFunction) {
     validateUser(req, res, next);
   }
 

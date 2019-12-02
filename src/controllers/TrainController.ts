@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { BasePath, Post, Get, Patch, Delete, Use } from "decorate-express";
+import { BasePath, Post, Get, Patch, Delete, Use, Put } from "decorate-express";
 
 import { Train } from "../models/Train";
 import { TrainRun } from "../models/TrainRun";
@@ -7,17 +7,18 @@ import { PolicePerson } from "../models/PolicePerson";
 import { Rank } from "../models/Rank";
 import { PoliceDepartment } from "../models/PoliceDepartment";
 import { Station } from "../models/Station";
-import validateUser from "../middlewares/ValidateUser";
 import { LineStation } from "../models/LineStation";
 import { LineStationTrain } from "../models/LineStationTrain";
 import { Line } from "../models/Line";
 import { QueryTypes } from "sequelize";
 import { sequelize } from "../sequelize";
+import validateUser from "../middlewares/ValidateUser";
+import { User } from "../models/User";
 
 @BasePath("/api/trains")
 export default class TrainController {
   @Use()
-  validateUser(req: Request, res: Response, next: NextFunction) {
+  validateUser(req: Request & { ability: any, user: User }, res: Response, next: NextFunction) {
     validateUser(req, res, next);
   }
 
@@ -28,13 +29,11 @@ export default class TrainController {
       const [train] = await Train.findOrCreate({ where: { number } });
       if (stations) {
         await Promise.all(stations.map(station => {
-          if (station.LineStationTrain.arrivalTime !== null || station.LineStationTrain.departureTime !== null) {
-            return train.$add("lineStation", station.lineStationId, {
-              through: {
-                ...station.LineStationTrain
-              }
-            });
-          }
+          return train.$add("lineStation", station.lineStationId, {
+            through: {
+              ...station.LineStationTrain
+            }
+          });
         }));
       }
       res.status(201).json(train);
@@ -131,6 +130,23 @@ export default class TrainController {
     }
   }
 
+  @Put("/:id/stations")
+  async updateLineStations(req: Request, res: Response, next: NextFunction) {
+    try {
+      await Promise.all(req.body.map(station => {
+        return LineStationTrain.update(station.LineStationTrain, {
+          where: {
+            trainId: req.params.id,
+            lineStationId: station.lineStationId
+          }
+        });
+      }));
+      res.sendStatus(200);
+    } catch (e) {
+      next(e);
+    }
+  }
+
   @Patch("/:id/stations/:lineStationId")
   async updateStation(req: Request, res: Response, next: NextFunction) {
     try {
@@ -162,17 +178,9 @@ export default class TrainController {
   }
 
   @Get("/runs")
-  async getAllTrainRuns(req: Request, res: Response, next: NextFunction) {
+  async getAllTrainRuns(req: Request & {ability: any, User: any}, res: Response, next: NextFunction) {
     try {
-      const trainRuns = await TrainRun.findAll({
-        include: [
-          Train,
-          {
-            model: PolicePerson,
-            include: [Rank, PoliceDepartment]
-          }
-        ]
-      });
+      const trainRuns = await TrainRun.scope({ method: ['accessibleBy', req.ability] }).findAll();
       res.json(trainRuns);
     } catch (e) {
       next(e);
@@ -180,13 +188,23 @@ export default class TrainController {
   }
 
   @Get("/")
-  async get(req: Request, res: Response, next: NextFunction) {
+  async get(req: Request & { ability: any, user: User }, res: Response, next: NextFunction) {
     if (req.query.departureStation && req.query.arrivalStation) {
       this.getByStations(req, res, next);
     } else {
       this.getAll(req, res, next);
     }
   }
+
+ /* @Get("/users")
+  async getByUser(req: Request & { ability: any, user: User }, res: Response, next: NextFunction) {
+    try {
+      const trains = await Train.scope({ method: ['accessibleBy', req.ability] }).findAll();
+      res.json(trains);
+    } catch (e) {
+      next(e);
+    }
+  } */
 
   @Get("/:id")
   async getById(req: Request, res: Response, next: NextFunction) {
@@ -202,10 +220,59 @@ export default class TrainController {
               }
             ]
           },
-          Line
+          Line,
+          LineStation
         ]
       });
       res.json(train);
+    } catch (e) {
+      next(e);
+    }
+  }
+
+  @Get("/:id/stations/lines/:lineId")
+  async getTrainLineStations(req: Request, res: Response, next: NextFunction) {
+    try {
+      const trains = await Train.findByPk(req.params.id, {
+        include: [{
+          model: LineStation,
+          through: { where: { lineId: req.params.lineId } }
+        }]
+      });
+      const stations: any = await Promise.all(trains.lineStations.map(lineStation => {
+        return Station.findByPk(lineStation.stationId);
+      }));
+
+      const lineStationTrains = trains.lineStations.map((lineStation, index) => {
+        return {
+          id: stations[index].id,
+          name: stations[index].name,
+          createdAt: stations[index].createdAt,
+          updatedAt: stations[index].updatedAt,
+          lineStationId: lineStation.id,
+          LineStation: {
+            id: lineStation.id,
+            lineId: lineStation.lineId,
+            stationId: lineStation.stationId,
+            stationOrder: lineStation.stationOrder,
+            createdAt: lineStation.createdAt,
+            updatedAt: lineStation.updatedAt
+          },
+          LineStationTrain: {
+            id: lineStation.LineStationTrain.id,
+            trainId: lineStation.LineStationTrain.trainId,
+            lineId: lineStation.LineStationTrain.lineId,
+            lineStationId: lineStation.LineStationTrain.lineStationId,
+            arrivalTime: lineStation.LineStationTrain.arrivalTime,
+            departureTime: lineStation.LineStationTrain.departureTime,
+            isArrival: lineStation.LineStationTrain.isArrival,
+            isDeprature: lineStation.LineStationTrain.isDeprature,
+            createdAt: lineStation.LineStationTrain.createdAt,
+            updatedAt: lineStation.LineStationTrain.updatedAt
+          }
+        };
+      })
+      res.json(lineStationTrains);
     } catch (e) {
       next(e);
     }
@@ -222,10 +289,11 @@ export default class TrainController {
           return {
             id: stationItem.id,
             name: stationItem.name,
-            trainId: train.id,
-            trainNumber: train.number,
             lineStationId: lineStation.id,
+            createdAt: lineStation.createdAt,
+            updatedAt: lineStation.updatedAt,
             LineStationTrain: {
+              id: lineStation.LineStationTrain.id,
               arrivalTime: lineStation.LineStationTrain.arrivalTime,
               departureTime: lineStation.LineStationTrain.departureTime,
               isArrival: lineStation.LineStationTrain.isArrival,
@@ -325,7 +393,7 @@ export default class TrainController {
                 AND departure_line_station_trains.is_deprature = 1
                 AND arrival_stations.name = $arrivalStation
                 AND arrival_line_station_trains.is_arrival = 1
-                AND departure_line_station.station_order <= arrival_line_station.station_order
+                AND departure_line_station.station_order < arrival_line_station.station_order
         `,
         {
           bind: {
@@ -362,23 +430,9 @@ export default class TrainController {
     }
   }
 
-  private async getAll(req: Request, res: Response, next: NextFunction) {
+  private async getAll(req: Request & { ability: any, user: User }, res: Response, next: NextFunction) {
     try {
-      const trains = await Train.findAll({
-        include: [
-          {
-            model: TrainRun,
-            include: [
-              {
-                model: PolicePerson,
-                include: [Rank, PoliceDepartment]
-              }
-            ]
-          },
-          Line,
-          LineStation
-        ]
-      });
+      const trains = await Train.scope({ method: ['accessibleBy', req.ability] }).findAll();
       res.json(trains);
     } catch (e) {
       next(e);

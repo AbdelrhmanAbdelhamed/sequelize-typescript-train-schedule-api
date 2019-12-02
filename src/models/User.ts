@@ -8,7 +8,13 @@ import {
   UpdatedAt,
   Sequelize,
   Unique,
+  BelongsToMany,
+  ForeignKey,
+  BelongsTo,
 } from "sequelize-typescript";
+import { Role } from "./Role";
+import { UserTrain } from "./UserTrain";
+import { Train } from "./Train";
 
 @Table({
   underscored: true
@@ -25,10 +31,15 @@ export class User extends Model<User> {
   @Column
   password!: string;
 
-  @Column({
-    defaultValue: false
-  })
-  isAdmin!: boolean;
+  @ForeignKey(() => Role)
+  @Column
+  roleId!: number;
+
+  @BelongsTo(() => Role)
+  role?: Role;
+
+  @BelongsToMany(() => User, () => UserTrain)
+  trains?: Array<Train & { userTrain: UserTrain }>;
 
   @CreatedAt
   @Column({
@@ -45,9 +56,9 @@ export class User extends Model<User> {
   token!: string;
 
   static async hashPassword(password) {
-      const HASH_SALT_ROUNDS = 12;
-      const hashedPassword = await bcrypt.hash(password, HASH_SALT_ROUNDS);
-      return hashedPassword;
+    const HASH_SALT_ROUNDS = 12;
+    const hashedPassword = await bcrypt.hash(password, HASH_SALT_ROUNDS);
+    return hashedPassword;
   }
 
   validPassword(password) {

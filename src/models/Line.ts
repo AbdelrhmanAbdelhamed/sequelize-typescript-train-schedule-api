@@ -28,9 +28,9 @@ export class Line extends Model<Line> {
   @BelongsToMany(() => Train, {
     through: {
       model: () => LineStationTrain,
-      unique: false
-    },
-    constraints: false
+      unique: false,
+      foreignKey: 'line_id'
+    }
   })
   trains?: Array<Train & {LineStationTrain: LineStationTrain}>;
 

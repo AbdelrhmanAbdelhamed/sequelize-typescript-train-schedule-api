@@ -1,6 +1,8 @@
 import { Sequelize } from 'sequelize-typescript';
+import { Op } from 'sequelize';
 
 export const sequelize = new Sequelize("train_schedule_test", "tamer_soliman", "A.dmin@123", {
+  operatorsAliases: { $and: Op.and, $or: Op.or, $not: Op.not },
   host:  "localhost",
   port: 3306,
   dialect: "mysql",
