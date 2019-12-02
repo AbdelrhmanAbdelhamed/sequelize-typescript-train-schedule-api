@@ -10,6 +10,7 @@ import {
 } from "sequelize-typescript";
 
 import { PolicePerson } from "./PolicePerson";
+import { User } from "./User";
 
 @Table({
   underscored: true
@@ -22,6 +23,9 @@ export class PoliceDepartment extends Model<PoliceDepartment> {
 
   @HasMany(() => PolicePerson)
   policePeople?: PolicePerson[];
+
+  @HasMany(() => User)
+  users?: User[];
 
   @CreatedAt
   @Column({

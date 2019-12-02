@@ -80,11 +80,18 @@ export default class TrainController {
           })
         );
 
-        const policePeopleIds: any = resultPolicePeople.map(
-          resultPolicePerson => resultPolicePerson[0].id
-        );
         const trainRun: TrainRun = await TrainRun.create(req.body);
-        await trainRun.$set("policePeople", policePeopleIds);
+        await Promise.all(
+          resultPolicePeople.map((resultPolicePerson, index) => {
+            return trainRun.$add("policePerson", resultPolicePerson[0].id, {
+              through: {
+                fromStationId: policePeople[index].fromStationId,
+                toStationId: policePeople[index].toStationId
+              }
+            })
+          })
+        )
+
 
         res.status(201).json(trainRun);
       }
@@ -178,10 +185,72 @@ export default class TrainController {
   }
 
   @Get("/runs")
-  async getAllTrainRuns(req: Request & {ability: any, User: any}, res: Response, next: NextFunction) {
+  async getAllTrainRuns(req: Request & { ability: any, User: any }, res: Response, next: NextFunction) {
     try {
-      const trainRuns = await TrainRun.scope({ method: ['accessibleBy', req.ability] }).findAll();
-      res.json(trainRuns);
+      const trainRuns: TrainRun[] = await TrainRun.scope({ method: ['accessibleBy', req.ability] }).findAll();
+
+      if (trainRuns) {
+        const policePeopleStations: any = await Promise.all(trainRuns.map(async trainRun => {
+          return await Promise.all(trainRun.policePeople!.map((policePerson: any) => {
+            return [Station.findByPk(policePerson.TrainRunPolicePerson.fromStationId),
+            Station.findByPk(policePerson.TrainRunPolicePerson.toStationId)
+            ]
+          }).map(Promise.all, Promise));
+        }));
+        const trainRunsWithStations: any = trainRuns.map((trainRun, index) => {
+          const fromStation = policePeopleStations[index][0][0];
+          const toStation = policePeopleStations[index][0][1];
+          const policePeopleWithStations: any = trainRun.policePeople!.map(policePerson => {
+            return {
+              createdAt: policePerson.createdAt,
+              id: policePerson.id,
+              name: policePerson.name,
+              phoneNumber: policePerson.phoneNumber,
+              policeDepartment: {
+                createdAt: policePerson.policeDepartment.createdAt,
+                id: policePerson.policeDepartment.id,
+                name: policePerson.policeDepartment.name,
+                updatedAt: policePerson.policeDepartment.updatedAt
+              },
+              policeDepartmentId: policePerson.policeDepartmentId,
+              rank: {
+                createdAt: policePerson.rank.createdAt,
+                id: policePerson.rank.id,
+                name: policePerson.rank.name,
+                updatedAt: policePerson.rank.updatedAt
+              },
+              rankId: policePerson.rankId,
+              updatedAt: policePerson.updatedAt,
+              TrainRunPolicePerson: {
+                createdAt: policePerson.TrainRunPolicePerson.createdAt,
+                fromStationId: policePerson.TrainRunPolicePerson.fromStationId,
+                policePersonId: policePerson.TrainRunPolicePerson.policePersonId,
+                toStationId: policePerson.TrainRunPolicePerson.toStationId,
+                trainRunId: policePerson.TrainRunPolicePerson.trainRunId,
+                updatedAt: policePerson.TrainRunPolicePerson.updatedAt,
+                fromStation: fromStation,
+                toStation: toStation
+              }
+            }
+          })
+          return {
+            createdAt: trainRun.createdAt,
+            day: trainRun.day,
+            id: trainRun.id,
+            policePeople: policePeopleWithStations,
+            trainId: trainRun.trainId,
+            updatedAt: trainRun.updatedAt,
+            train: {
+              createdAt: trainRun.train!.createdAt,
+              id: trainRun.train!.id,
+              number: trainRun.train!.number,
+              updatedAt: trainRun.train!.updatedAt
+            }
+          }
+        })
+        res.json(trainRunsWithStations);
+      }
+
     } catch (e) {
       next(e);
     }
@@ -195,16 +264,6 @@ export default class TrainController {
       this.getAll(req, res, next);
     }
   }
-
- /* @Get("/users")
-  async getByUser(req: Request & { ability: any, user: User }, res: Response, next: NextFunction) {
-    try {
-      const trains = await Train.scope({ method: ['accessibleBy', req.ability] }).findAll();
-      res.json(trains);
-    } catch (e) {
-      next(e);
-    }
-  } */
 
   @Get("/:id")
   async getById(req: Request, res: Response, next: NextFunction) {
@@ -224,7 +283,72 @@ export default class TrainController {
           LineStation
         ]
       });
-      res.json(train);
+
+      if (train) {
+        const policePeopleStations: any = await Promise.all(train.trainRuns.map(async trainRun => {
+          return await Promise.all(trainRun.policePeople!.map((policePerson: any) => {
+            return [Station.findByPk(policePerson.TrainRunPolicePerson.fromStationId),
+            Station.findByPk(policePerson.TrainRunPolicePerson.toStationId)
+            ]
+          }).map(Promise.all, Promise));
+        }));
+        const trainRunsWithStations: any = train.trainRuns.map((trainRun, index) => {
+          const fromStation = policePeopleStations[index][0][0];
+          const toStation = policePeopleStations[index][0][1];
+          const policePeopleWithStations = trainRun.policePeople!.map(policePerson => {
+            return {
+              createdAt: policePerson.createdAt,
+              id: policePerson.id,
+              name: policePerson.name,
+              phoneNumber: policePerson.phoneNumber,
+              policeDepartment: {
+                createdAt: policePerson.policeDepartment.createdAt,
+                id: policePerson.policeDepartment.id,
+                name: policePerson.policeDepartment.name,
+                updatedAt: policePerson.policeDepartment.updatedAt
+              },
+              policeDepartmentId: policePerson.policeDepartmentId,
+              rank: {
+                createdAt: policePerson.rank.createdAt,
+                id: policePerson.rank.id,
+                name: policePerson.rank.name,
+                updatedAt: policePerson.rank.updatedAt
+              },
+              rankId: policePerson.rankId,
+              updatedAt: policePerson.updatedAt,
+              TrainRunPolicePerson: {
+                createdAt: policePerson.TrainRunPolicePerson.createdAt,
+                fromStationId: policePerson.TrainRunPolicePerson.fromStationId,
+                policePersonId: policePerson.TrainRunPolicePerson.policePersonId,
+                toStationId: policePerson.TrainRunPolicePerson.toStationId,
+                trainRunId: policePerson.TrainRunPolicePerson.trainRunId,
+                updatedAt: policePerson.TrainRunPolicePerson.updatedAt,
+                fromStation: fromStation,
+                toStation: toStation
+              }
+            }
+          })
+          return {
+            createdAt: trainRun.createdAt,
+            day: trainRun.day,
+            id: trainRun.id,
+            policePeople: policePeopleWithStations,
+            trainId: trainRun.trainId,
+            updatedAt: trainRun.updatedAt
+          }
+        })
+
+        const trainWithTrainRunsStation = {
+          createdAt: train.createdAt,
+          id: train.id,
+          lineStations: train.lineStations,
+          lines: train.lines,
+          number: train.number,
+          trainRuns: trainRunsWithStations,
+          updatedAt: train.updatedAt
+        }
+        res.json(trainWithTrainRunsStation);
+      }
     } catch (e) {
       next(e);
     }
@@ -368,7 +492,7 @@ export default class TrainController {
     }
   }
 
-  private async getByStations(req: Request, res: Response, next: NextFunction) {
+  private async getByStations(req: Request & { ability: any, user: any }, res: Response, next: NextFunction) {
     try {
       const trainsQuery = await sequelize.query(
         `
@@ -405,26 +529,82 @@ export default class TrainController {
         }
       );
 
-      const trains = await Train.findAll({
+      const trains = await Train.scope({ method: ['accessibleBy', req.ability] }).findAll({
         where: {
           id: trainsQuery.map(train => train.id)
-        },
-        include: [
-          {
-            model: TrainRun,
-            include: [
-              {
-                model: PolicePerson,
-                include: [Rank, PoliceDepartment]
-              }
-            ]
-          },
-          Line,
-          LineStation
-        ]
+        }
       });
 
-      res.json(trains);
+      let trainswithTrainRunsStations = [];
+      if (trains && trains.length > 0) {
+        trainswithTrainRunsStations = await Promise.all(trains.map(async train => {
+          if (train) {
+            const policePeopleStations: any = await Promise.all(train.trainRuns.map(async trainRun => {
+              return await Promise.all(trainRun.policePeople!.map((policePerson: any) => {
+                return [Station.findByPk(policePerson.TrainRunPolicePerson.fromStationId),
+                Station.findByPk(policePerson.TrainRunPolicePerson.toStationId)
+                ]
+              }).map(Promise.all, Promise));
+            }));
+            const trainRunsWithStations: any = train.trainRuns.map((trainRun, index) => {
+              const fromStation = policePeopleStations[index][0][0];
+              const toStation = policePeopleStations[index][0][1];
+              const policePeopleWithStations = trainRun.policePeople!.map(policePerson => {
+                return {
+                  createdAt: policePerson.createdAt,
+                  id: policePerson.id,
+                  name: policePerson.name,
+                  phoneNumber: policePerson.phoneNumber,
+                  policeDepartment: {
+                    createdAt: policePerson.policeDepartment.createdAt,
+                    id: policePerson.policeDepartment.id,
+                    name: policePerson.policeDepartment.name,
+                    updatedAt: policePerson.policeDepartment.updatedAt
+                  },
+                  policeDepartmentId: policePerson.policeDepartmentId,
+                  rank: {
+                    createdAt: policePerson.rank.createdAt,
+                    id: policePerson.rank.id,
+                    name: policePerson.rank.name,
+                    updatedAt: policePerson.rank.updatedAt
+                  },
+                  rankId: policePerson.rankId,
+                  updatedAt: policePerson.updatedAt,
+                  TrainRunPolicePerson: {
+                    createdAt: policePerson.TrainRunPolicePerson.createdAt,
+                    fromStationId: policePerson.TrainRunPolicePerson.fromStationId,
+                    policePersonId: policePerson.TrainRunPolicePerson.policePersonId,
+                    toStationId: policePerson.TrainRunPolicePerson.toStationId,
+                    trainRunId: policePerson.TrainRunPolicePerson.trainRunId,
+                    updatedAt: policePerson.TrainRunPolicePerson.updatedAt,
+                    fromStation: fromStation,
+                    toStation: toStation
+                  }
+                }
+              })
+              return {
+                createdAt: trainRun.createdAt,
+                day: trainRun.day,
+                id: trainRun.id,
+                policePeople: policePeopleWithStations,
+                trainId: trainRun.trainId,
+                updatedAt: trainRun.updatedAt
+              }
+            })
+
+            return {
+              createdAt: train.createdAt,
+              id: train.id,
+              lineStations: train.lineStations,
+              lines: train.lines,
+              number: train.number,
+              trainRuns: trainRunsWithStations,
+              updatedAt: train.updatedAt
+            }
+          }
+        }));
+      }
+      res.json(trainswithTrainRunsStations);
     } catch (e) {
       next(e);
     }
@@ -433,7 +613,76 @@ export default class TrainController {
   private async getAll(req: Request & { ability: any, user: User }, res: Response, next: NextFunction) {
     try {
       const trains = await Train.scope({ method: ['accessibleBy', req.ability] }).findAll();
-      res.json(trains);
+      let trainswithTrainRunsStations = [];
+      if (trains && trains.length > 0) {
+        trainswithTrainRunsStations = await Promise.all(trains.map(async train => {
+          if (train) {
+            const policePeopleStations: any = await Promise.all(train.trainRuns.map(async trainRun => {
+              return await Promise.all(trainRun.policePeople!.map((policePerson: any) => {
+                return [Station.findByPk(policePerson.TrainRunPolicePerson.fromStationId),
+                Station.findByPk(policePerson.TrainRunPolicePerson.toStationId)
+                ]
+              }).map(Promise.all, Promise));
+            }));
+            const trainRunsWithStations: any = train.trainRuns.map((trainRun, index) => {
+              const fromStation = policePeopleStations[index][0][0];
+              const toStation = policePeopleStations[index][0][1];
+              const policePeopleWithStations = trainRun.policePeople!.map(policePerson => {
+                return {
+                  createdAt: policePerson.createdAt,
+                  id: policePerson.id,
+                  name: policePerson.name,
+                  phoneNumber: policePerson.phoneNumber,
+                  policeDepartment: {
+                    createdAt: policePerson.policeDepartment.createdAt,
+                    id: policePerson.policeDepartment.id,
+                    name: policePerson.policeDepartment.name,
+                    updatedAt: policePerson.policeDepartment.updatedAt
+                  },
+                  policeDepartmentId: policePerson.policeDepartmentId,
+                  rank: {
+                    createdAt: policePerson.rank.createdAt,
+                    id: policePerson.rank.id,
+                    name: policePerson.rank.name,
+                    updatedAt: policePerson.rank.updatedAt
+                  },
+                  rankId: policePerson.rankId,
+                  updatedAt: policePerson.updatedAt,
+                  TrainRunPolicePerson: {
+                    createdAt: policePerson.TrainRunPolicePerson.createdAt,
+                    fromStationId: policePerson.TrainRunPolicePerson.fromStationId,
+                    policePersonId: policePerson.TrainRunPolicePerson.policePersonId,
+                    toStationId: policePerson.TrainRunPolicePerson.toStationId,
+                    trainRunId: policePerson.TrainRunPolicePerson.trainRunId,
+                    updatedAt: policePerson.TrainRunPolicePerson.updatedAt,
+                    fromStation: fromStation,
+                    toStation: toStation
+                  }
+                }
+              })
+              return {
+                createdAt: trainRun.createdAt,
+                day: trainRun.day,
+                id: trainRun.id,
+                policePeople: policePeopleWithStations,
+                trainId: trainRun.trainId,
+                updatedAt: trainRun.updatedAt
+              }
+            })
+
+            return {
+              createdAt: train.createdAt,
+              id: train.id,
+              lineStations: train.lineStations,
+              lines: train.lines,
+              number: train.number,
+              trainRuns: trainRunsWithStations,
+              updatedAt: train.updatedAt
+            }
+          }
+        }));
+      }
+      res.json(trainswithTrainRunsStations);
     } catch (e) {
       next(e);
     }

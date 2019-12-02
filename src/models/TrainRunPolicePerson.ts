@@ -5,7 +5,8 @@ import {
   Table,
   ForeignKey,
   UpdatedAt,
-  Sequelize
+  Sequelize,
+  BelongsTo
 } from "sequelize-typescript";
 
 import { TrainRun } from "./TrainRun";
@@ -24,6 +25,20 @@ export class TrainRunPolicePerson extends Model<TrainRunPolicePerson> {
   @ForeignKey(() => PolicePerson)
   @Column
   policePersonId!: number;
+
+  @ForeignKey(() => Station)
+  @Column
+  fromStationId!: number;
+
+  @ForeignKey(() => Station)
+  @Column
+  toStationId!: number;
+
+  @BelongsTo(() => Station,  { foreignKey: 'fromStationId', as: 'fromStation' })
+  fromStation!: Station;
+
+  @BelongsTo(() => Station,  { foreignKey: 'toStationId', as: 'toStation' })
+  toStation!: Station;
 
   @CreatedAt
   @Column({

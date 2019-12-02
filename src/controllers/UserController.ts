@@ -11,11 +11,12 @@ import validateUser from "../middlewares/ValidateUser";
 import { createAbilities, defineAbilitiesFor } from "../middlewares/DefineAbilitiesFor";
 import { Role } from "../models/Role";
 import { Train } from "../models/Train";
+import { PoliceDepartment } from "../models/PoliceDepartment";
 
 @BasePath("/api/users")
 export default class UserController {
 
-  static async generateToken(userId: any, userRole:any,  rules: any) {
+  static async generateToken(userId: any, userRole: any, rules: any) {
     const jwtSignPromise = util.promisify(jwt.sign);
     const token = await jwtSignPromise({ userId, userRole, rules }, process.env.AUTH_SECRET_KEY!);
     return token;
@@ -57,7 +58,7 @@ export default class UserController {
     await validateUser(req, res, next);
   }
 
- @Use()
+  @Use()
   async createAbilities(req: Request & { ability: any, user: User }, res: Response, next: NextFunction) {
     await createAbilities(req, res, next);
   }
@@ -65,11 +66,22 @@ export default class UserController {
   @Post("/")
   async create(req: Request, res: Response, next: NextFunction) {
     try {
+
+      const policeDepartment = await PoliceDepartment.findOrCreate({
+        where: { name: req.body.policeDepartment.name }
+      })
+
       if (req.body.password) req.body.password = await User.hashPassword(req.body.password);
       const user: User = await User.create(req.body);
-      if(user && req.body.role) {
+
+      if (user && req.body.role) {
         await user.$set("role", req.body.role.id);
       }
+
+      if (user && policeDepartment.id) {
+        await user.$set("policeDepartment", policeDepartment.id);
+      }
+
       res.status(201).json(user);
     } catch (e) {
       next(e);
@@ -87,7 +99,7 @@ export default class UserController {
         }
       }
       res.json(trains);
-     } catch (e) {
+    } catch (e) {
       next(e);
     }
   }
@@ -95,7 +107,7 @@ export default class UserController {
   @Get('/')
   async getAll(req: Request, res: Response, next: NextFunction) {
     try {
-      const users = await User.findAll({ attributes: ['id', 'username', 'fullName'], include: [Role, Train] });
+      const users = await User.findAll({ attributes: ['id', 'username', 'fullName'], include: [Role, Train, PoliceDepartment] });
       res.json(users);
     } catch (e) {
       next(e);

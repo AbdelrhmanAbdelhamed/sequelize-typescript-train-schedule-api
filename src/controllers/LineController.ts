@@ -16,7 +16,7 @@ import { User } from '../models/User';
 export default class LineController {
 
   @Use()
-  validateUser(req: Request & {ability: any, user: User}, res: Response, next: NextFunction) {
+  validateUser(req: Request & { ability: any, user: User }, res: Response, next: NextFunction) {
     validateUser(req, res, next);
   }
 
@@ -33,7 +33,7 @@ export default class LineController {
   @Get('/')
   async getAll(req: Request, res: Response, next: NextFunction) {
     try {
-      const lines: Line[] = await Line.findAll({
+      const lines: any[] = await Line.findAll({
         include: [Station, {
           model: Train,
           include: [
@@ -50,45 +50,93 @@ export default class LineController {
         }],
         order: [[literal('`stations.LineStation.stationOrder`'), 'ASC']]
       });
-     /* const linesWithTrains = await Promise.all(lines.map(async line => {
-        let lineTrains = await Train.findAll({
-          where: {
-            lineId: line.id,
-          },
-          include: [{
-            model: LineStation,
-            required: true,
-          }]
-        })
-        lineTrains = lineTrains.map(lineTrain => {
-          let train = lineTrain.trains[0];
-          return {
-            id: train.id,
-            number: train.number,
-            createdAt: train.createdAt,
-            updatedAt: train.updatedAt,
-            lineStationTrain: train.LineStationTrain,
-            LineStation: {
-              id: lineTrain.id,
-              lineId: lineTrain.lineId,
-              stationId: lineTrain.stationId,
-              stationOrder: lineTrain.stationOrder,
-              createdAt: lineTrain.createdAt,
-              updatedAt: lineTrain.updatedAt
+
+      let linesWithTrainRunsStations: any = lines;
+      if (lines && lines.length > 0) {
+        linesWithTrainRunsStations = await Promise.all(lines.map(async line => {
+          let lineTrainsRunsStations: any = [];
+          let lineWithTrainRunsStaions: any = line;
+          if (line && line.trains && line.trains.length > 0) {
+            lineTrainsRunsStations = await Promise.all(line.trains.map(async train => {
+              if (train) {
+                const policePeopleStations: any = await Promise.all(train.trainRuns!.map(async trainRun => {
+                  return await Promise.all(trainRun.policePeople!.map((policePerson: any) => {
+                    return [Station.findByPk(policePerson.TrainRunPolicePerson.fromStationId),
+                    Station.findByPk(policePerson.TrainRunPolicePerson.toStationId)
+                    ]
+                  }).map(Promise.all, Promise));
+                }));
+                const trainRunsWithStations: any = train.trainRuns.map((trainRun, index) => {
+                  const fromStation = policePeopleStations[index][0][0];
+                  const toStation = policePeopleStations[index][0][1];
+                  const policePeopleWithStations = trainRun.policePeople!.map(policePerson => {
+                    return {
+                      createdAt: policePerson.createdAt,
+                      id: policePerson.id,
+                      name: policePerson.name,
+                      phoneNumber: policePerson.phoneNumber,
+                      policeDepartment: {
+                        createdAt: policePerson.policeDepartment.createdAt,
+                        id: policePerson.policeDepartment.id,
+                        name: policePerson.policeDepartment.name,
+                        updatedAt: policePerson.policeDepartment.updatedAt
+                      },
+                      policeDepartmentId: policePerson.policeDepartmentId,
+                      rank: {
+                        createdAt: policePerson.rank.createdAt,
+                        id: policePerson.rank.id,
+                        name: policePerson.rank.name,
+                        updatedAt: policePerson.rank.updatedAt
+                      },
+                      rankId: policePerson.rankId,
+                      updatedAt: policePerson.updatedAt,
+                      TrainRunPolicePerson: {
+                        createdAt: policePerson.TrainRunPolicePerson.createdAt,
+                        fromStationId: policePerson.TrainRunPolicePerson.fromStationId,
+                        policePersonId: policePerson.TrainRunPolicePerson.policePersonId,
+                        toStationId: policePerson.TrainRunPolicePerson.toStationId,
+                        trainRunId: policePerson.TrainRunPolicePerson.trainRunId,
+                        updatedAt: policePerson.TrainRunPolicePerson.updatedAt,
+                        fromStation: fromStation,
+                        toStation: toStation
+                      }
+                    }
+                  })
+                  return {
+                    createdAt: trainRun.createdAt,
+                    day: trainRun.day,
+                    id: trainRun.id,
+                    policePeople: policePeopleWithStations,
+                    trainId: trainRun.trainId,
+                    updatedAt: trainRun.updatedAt
+                  }
+                })
+
+                return {
+                  createdAt: train.createdAt,
+                  id: train.id,
+                  lineStations: train.lineStations,
+                  lines: train.lines,
+                  number: train.number,
+                  trainRuns: trainRunsWithStations,
+                  updatedAt: train.updatedAt
+                }
+              }
+            }));
+
+            lineWithTrainRunsStaions = {
+              createdAt: line.createdAt,
+              id: line.id,
+              name: line.name,
+              stations: line.stations,
+              trains: lineTrainsRunsStations,
+              updatedAt: line.updatedAt
             }
           }
-        })
-        const lineWithTrains = {
-          id: line.id,
-          name: line.name,
-          createdAt: line.createdAt,
-          updatedAt: line.updatedAt,
-          stations: [...line.stations!],
-          trains: [...lineTrains]
-        }
-        return lineWithTrains;
-      })); */
-      res.json(lines);
+          return lineWithTrainRunsStaions;
+        }));
+      }
+      res.json(linesWithTrainRunsStations);
     } catch (e) {
       next(e);
     }
@@ -114,44 +162,88 @@ export default class LineController {
         }],
         order: [[literal('`stations.LineStation.stationOrder`'), 'ASC']]
       });
-      /* let lineTrains = await LineStation.findAll({
-        where: {
-          lineId: line.id,
-        },
-        include: [{
-          model: Train,
-          required: true
-        }]
-      });
 
-      lineTrains = lineTrains.map(lineTrain => {
-        let train = lineTrain.trains[0];
-        return {
-          id: train.id,
-          number: train.number,
-          createdAt: train.createdAt,
-          updatedAt: train.updatedAt,
-          lineStationTrain: train.LineStationTrain,
-          LineStation: {
-            id: lineTrain.id,
-            lineId: lineTrain.lineId,
-            stationId: lineTrain.stationId,
-            stationOrder: lineTrain.stationOrder,
-            createdAt: lineTrain.createdAt,
-            updatedAt: lineTrain.updatedAt
+      let lineTrainsRunsStations = [];
+      let lineWithTrainRunsStaions = line;
+      if (line && line.trains && line.trains.length > 0) {
+        lineTrainsRunsStations = await Promise.all(line.trains.map(async train => {
+          if (train) {
+            const policePeopleStations: any = await Promise.all(train.trainRuns.map(async trainRun => {
+              return await Promise.all(trainRun.policePeople!.map((policePerson: any) => {
+                return [Station.findByPk(policePerson.TrainRunPolicePerson.fromStationId),
+                Station.findByPk(policePerson.TrainRunPolicePerson.toStationId)
+                ]
+              }).map(Promise.all, Promise));
+            }));
+            const trainRunsWithStations: any = train.trainRuns.map((trainRun, index) => {
+              const fromStation = policePeopleStations[index][0][0];
+              const toStation = policePeopleStations[index][0][1];
+              const policePeopleWithStations = trainRun.policePeople!.map(policePerson => {
+                return {
+                  createdAt: policePerson.createdAt,
+                  id: policePerson.id,
+                  name: policePerson.name,
+                  phoneNumber: policePerson.phoneNumber,
+                  policeDepartment: {
+                    createdAt: policePerson.policeDepartment.createdAt,
+                    id: policePerson.policeDepartment.id,
+                    name: policePerson.policeDepartment.name,
+                    updatedAt: policePerson.policeDepartment.updatedAt
+                  },
+                  policeDepartmentId: policePerson.policeDepartmentId,
+                  rank: {
+                    createdAt: policePerson.rank.createdAt,
+                    id: policePerson.rank.id,
+                    name: policePerson.rank.name,
+                    updatedAt: policePerson.rank.updatedAt
+                  },
+                  rankId: policePerson.rankId,
+                  updatedAt: policePerson.updatedAt,
+                  TrainRunPolicePerson: {
+                    createdAt: policePerson.TrainRunPolicePerson.createdAt,
+                    fromStationId: policePerson.TrainRunPolicePerson.fromStationId,
+                    policePersonId: policePerson.TrainRunPolicePerson.policePersonId,
+                    toStationId: policePerson.TrainRunPolicePerson.toStationId,
+                    trainRunId: policePerson.TrainRunPolicePerson.trainRunId,
+                    updatedAt: policePerson.TrainRunPolicePerson.updatedAt,
+                    fromStation: fromStation,
+                    toStation: toStation
+                  }
+                }
+              })
+              return {
+                createdAt: trainRun.createdAt,
+                day: trainRun.day,
+                id: trainRun.id,
+                policePeople: policePeopleWithStations,
+                trainId: trainRun.trainId,
+                updatedAt: trainRun.updatedAt
+              }
+            })
+
+            return {
+              createdAt: train.createdAt,
+              id: train.id,
+              lineStations: train.lineStations,
+              lines: train.lines,
+              number: train.number,
+              trainRuns: trainRunsWithStations,
+              updatedAt: train.updatedAt
+            }
           }
-        }
-      })
+        }));
 
-      const lineWithTrains = {
-        id: line.id,
-        name: line.name,
-        createdAt: line.createdAt,
-        updatedAt: line.updatedAt,
-        stations: [...line.stations!],
-        trains: [...lineTrains]
-      } */
-      res.json(line);
+        lineWithTrainRunsStaions = {
+          createdAt: line.createdAt,
+          id: line.id,
+          name: line.name,
+          stations: line.stations,
+          trains: lineTrainsRunsStations,
+          updatedAt: line.updatedAt
+        }
+      }
+
+      res.json(lineWithTrainRunsStaions);
     } catch (e) {
       next(e);
     }

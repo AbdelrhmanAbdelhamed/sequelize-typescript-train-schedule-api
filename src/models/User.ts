@@ -15,6 +15,7 @@ import {
 import { Role } from "./Role";
 import { UserTrain } from "./UserTrain";
 import { Train } from "./Train";
+import { PoliceDepartment } from "./PoliceDepartment";
 
 @Table({
   underscored: true
@@ -37,6 +38,13 @@ export class User extends Model<User> {
 
   @BelongsTo(() => Role)
   role?: Role;
+
+  @ForeignKey(() => PoliceDepartment)
+  @Column
+  policeDepartmentId!: number;
+
+  @BelongsTo(() => PoliceDepartment)
+  policeDepartment!: PoliceDepartment;
 
   @BelongsToMany(() => Train, () => UserTrain)
   trains?: Array<Train & { userTrain: UserTrain }>;
