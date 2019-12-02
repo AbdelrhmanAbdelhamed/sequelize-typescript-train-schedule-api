@@ -67,7 +67,7 @@ export default class UserController {
   async create(req: Request, res: Response, next: NextFunction) {
     try {
 
-      const policeDepartment = await PoliceDepartment.findOrCreate({
+      const [policeDepartment] = await PoliceDepartment.findOrCreate({
         where: { name: req.body.policeDepartment.name }
       })
 
