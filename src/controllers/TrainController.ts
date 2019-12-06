@@ -268,7 +268,7 @@ export default class TrainController {
         }
       });
 
-      if (trainRuns) {
+      if (trainRuns && trainRuns.length > 0) {
         const policePeopleStations: any = await Promise.all(trainRuns.map(async trainRun => {
           return await Promise.all(trainRun.policePeople!.map((policePerson: any) => {
             return [Station.findByPk(policePerson.TrainRunPolicePerson.fromStationId),
@@ -328,6 +328,11 @@ export default class TrainController {
           }
         })
         res.json(trainRunsWithStations);
+      } else {
+        const train = await Train.findByPk(req.params.id);
+        if(train) {
+          res.json({train});
+        } 
       }
 
     } catch (e) {
