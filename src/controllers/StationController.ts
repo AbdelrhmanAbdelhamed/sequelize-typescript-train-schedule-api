@@ -3,7 +3,6 @@ import { BasePath, Post, Get, Patch, Delete, Use } from "decorate-express";
 
 import { Station } from "../models/Station";
 import { Line } from "../models/Line";
-import { Train } from "../models/Train";
 import validateUser from '../middlewares/ValidateUser';
 import { LineStation } from '../models/LineStation';
 import { col } from 'sequelize';
@@ -72,9 +71,6 @@ export default class StationController {
           {
             model: Station,
             where: { id: req.params.id }
-          },
-          {
-            model: Train
           }
         ]
       });
@@ -90,6 +86,21 @@ export default class StationController {
       await Station.update(req.body, {
         where: {
           id: req.params.id
+        }
+      });
+      res.sendStatus(200);
+    } catch (e) {
+      next(e);
+    }
+  }
+
+  @Patch("/:id/lines/:lineId")
+  async updateStationOrder(req: Request, res: Response, next: NextFunction) {
+    try {
+      await LineStation.update(req.body, {
+        where: {
+          stationId: req.params.id,
+          lineId: req.params.lineId
         }
       });
       res.sendStatus(200);
@@ -121,6 +132,18 @@ export default class StationController {
           lineId: req.params.lineId
         }
       });
+      const count: any = await LineStation.count({
+        where: {
+          stationId: req.params.id
+        }
+      });
+      if (count < 1) {
+        await Station.destroy({
+          where: {
+            id: req.params.id
+          }
+        })
+      }
       res.sendStatus(200);
     } catch (e) {
       next(e);

@@ -19,25 +19,33 @@ import { Station } from "./Station";
 export class TrainRunPolicePerson extends Model<TrainRunPolicePerson> {
 
   @ForeignKey(() => TrainRun)
-  @Column
+  @Column({
+    allowNull: false
+  })
   trainRunId!: number;
 
   @ForeignKey(() => PolicePerson)
-  @Column
+  @Column({
+    allowNull: false
+  })
   policePersonId!: number;
 
   @ForeignKey(() => Station)
-  @Column
+  @Column({
+    allowNull: false
+  })
   fromStationId!: number;
 
   @ForeignKey(() => Station)
-  @Column
+  @Column({
+    allowNull: false
+  })
   toStationId!: number;
 
-  @BelongsTo(() => Station,  { foreignKey: 'fromStationId', as: 'fromStation' })
+  @BelongsTo(() => Station, { foreignKey: 'fromStationId', as: 'fromStation' })
   fromStation!: Station;
 
-  @BelongsTo(() => Station,  { foreignKey: 'toStationId', as: 'toStation' })
+  @BelongsTo(() => Station, { foreignKey: 'toStationId', as: 'toStation' })
   toStation!: Station;
 
   @CreatedAt

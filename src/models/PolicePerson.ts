@@ -20,18 +20,26 @@ import { TrainRunPolicePerson } from "./TrainRunPolicePerson";
 })
 export class PolicePerson extends Model<PolicePerson> {
 
-  @Column
+  @Column({
+    allowNull: false
+  })
   name!: string;
 
-  @Column
+  @Column({
+    allowNull: false
+  })
   phoneNumber!: string;
 
   @ForeignKey(() => Rank)
-  @Column
+  @Column({
+    allowNull: false
+  })
   rankId!: number;
 
   @ForeignKey(() => PoliceDepartment)
-  @Column
+  @Column({
+    allowNull: false
+  })
   policeDepartmentId!: number;
 
   @BelongsTo(() => Rank)

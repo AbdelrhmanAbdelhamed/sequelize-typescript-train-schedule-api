@@ -67,7 +67,7 @@ app.use((req: express.Request, res: express.Response, next: express.NextFunction
 
 // handle errors
 app.use(errorhandler({
-  debug: false,
+  debug: true,
   // tslint:disable-next-line: no-console
   log: false,
 }));

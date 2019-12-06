@@ -33,7 +33,13 @@ export class Station extends Model<Station> {
   })
   updatedAt?: Date;
 
-  @BelongsToMany(() => Line, () => LineStation)
-  lines?: Array<Line & {LineStation: LineStation}>;
+  @BelongsToMany(() => Line, {
+    through: {
+      model: () => LineStation,
+      unique: false,
+      foreignKey: 'station_id'
+    }
+  })
+  lines?: Array<Line & { LineStation: LineStation }>;
 
 }

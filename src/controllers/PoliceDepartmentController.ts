@@ -27,9 +27,7 @@ export default class PoliceDepartmentController {
   @Get('/')
   async getAll(req: Request, res: Response, next: NextFunction) {
     try {
-      const policeDepartments = await PoliceDepartment.findAll({
-        include: [PolicePerson]
-      });
+      const policeDepartments = await PoliceDepartment.findAll();
       res.json(policeDepartments);
     } catch (e) {
       next(e);

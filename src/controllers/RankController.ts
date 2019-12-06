@@ -27,9 +27,7 @@ export default class RankController {
   @Get('/')
   async getAll(req: Request, res: Response, next: NextFunction) {
     try {
-      const rank = await Rank.findAll({
-        include: [PolicePerson]
-      });
+      const rank = await Rank.findAll();
       res.json(rank);
     } catch (e) {
       next(e);

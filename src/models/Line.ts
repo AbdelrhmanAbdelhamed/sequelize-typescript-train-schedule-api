@@ -22,7 +22,13 @@ export class Line extends Model<Line> {
   @Column
   name!: string;
 
-  @BelongsToMany(() => Station, () => LineStation)
+  @BelongsToMany(() => Station, {
+    through: {
+      model: () => LineStation,
+      unique: false,
+      foreignKey: 'line_id'
+    }
+  })
   stations?: Array<Station & { LineStation: LineStation }>;
   
   @BelongsToMany(() => Train, {

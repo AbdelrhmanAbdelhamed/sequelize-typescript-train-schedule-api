@@ -28,6 +28,7 @@ import { Line } from "./Line";
     @ForeignKey(() => Train)
     @Column({
       type: DataTypes.INTEGER,
+      allowNull: false,
       unique: 'lines_stations_trains_unique'
     })
     trainId!: number;
@@ -35,6 +36,7 @@ import { Line } from "./Line";
     @ForeignKey(() => Line)
     @Column({
       type: DataTypes.INTEGER,
+      allowNull: false,
       unique: 'lines_stations_trains_unique'
     })
     lineId!: number;
@@ -42,6 +44,7 @@ import { Line } from "./Line";
     @ForeignKey(() => LineStation)
     @Column({
       type: DataTypes.INTEGER,
+      allowNull: false,
       unique: 'lines_stations_trains_unique'
     })
     lineStationId!: number;

@@ -116,6 +116,14 @@ export default class UserController {
 
   @Patch('/:id')
   async update(req: Request, res: Response, next: NextFunction) {
+
+    if (req.body.policeDepartmentName) {
+      const [policeDepartment] = await PoliceDepartment.findOrCreate({
+        where: { name: req.body.policeDepartmentName }
+      });
+      req.body.policeDepartmentId = policeDepartment.id;
+    }
+
     if (req.body.password) req.body.password = await User.hashPassword(req.body.password);
     try {
       await User.update(req.body, {

@@ -28,15 +28,21 @@ export class LineStation extends Model<LineStation> {
   id!: number;
 
   @ForeignKey(() => Line)
-  @Column
+  @Column({
+    unique: "line_station_order_unique",
+    allowNull: false
+  })
   lineId!: number;
 
   @ForeignKey(() => Station)
-  @Column
+  @Column({
+    allowNull: false
+  })
   stationId!: number;
 
   @Column({
-    unique: "line_stations_stationId_lineId_unique"
+    unique: "line_station_order_unique",
+    allowNull: false
   })
   stationOrder!: number;
 
@@ -47,8 +53,8 @@ export class LineStation extends Model<LineStation> {
       foreignKey: 'line_station_id'
     }
   })
-  trains?: Array<Train & {LineStationTrain: LineStationTrain}>;
-  
+  trains?: Array<Train & { LineStationTrain: LineStationTrain }>;
+
   @BelongsToMany(() => Line, {
     through: {
       model: () => LineStationTrain,
@@ -56,7 +62,7 @@ export class LineStation extends Model<LineStation> {
       foreignKey: 'line_station_id'
     }
   })
-  lines?: Array<Line & {LineStationTrain: LineStationTrain}>;
+  lines?: Array<Line & { LineStationTrain: LineStationTrain }>;
 
   @CreatedAt
   @Column({

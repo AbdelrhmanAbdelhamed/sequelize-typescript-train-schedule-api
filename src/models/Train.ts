@@ -18,28 +18,15 @@ import { Line } from "./Line";
 import { User } from "./User";
 import { UserTrain } from "./UserTrain";
 import toSequelizeQuery from "../utils/toSequelizeQuery";
-import { Rank } from "./Rank";
-import { PolicePerson } from "./PolicePerson";
-import { PoliceDepartment } from "./PoliceDepartment";
 import isEmpty from "../utils/isEmpty";
 
 @Scopes(() => ({
   accessibleBy: function(ability, action = 'read') {
-    const conditions = toSequelizeQuery(ability, 'UserTrain');
+    const conditions = toSequelizeQuery(ability, 'UserTrain', action);
     const includeConditions = !isEmpty(conditions);
     return {
       include: [
-        {
-          model: TrainRun,
-          include: [
-            {
-              model: PolicePerson,
-              include: [Rank, PoliceDepartment]
-            }
-          ]
-        },
         Line,
-        LineStation,
         {
           model: User,
           required: includeConditions,
