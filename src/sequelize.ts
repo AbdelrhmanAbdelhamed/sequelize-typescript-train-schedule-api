@@ -7,7 +7,7 @@ export const sequelize = new Sequelize("train_schedule", "tamer_soliman", "A.dmi
   port: 3306,
   dialect: "mysql",
   pool: {
-    max: 10,
+    max: 40,
     min: 0,
     acquire: 30000,
     idle: 10000

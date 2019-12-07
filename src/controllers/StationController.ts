@@ -12,7 +12,7 @@ import { User } from '../models/User';
 export default class StationController {
 
   @Use()
-  validateUser(req: Request & {ability: any, user: User}, res: Response, next: NextFunction) {
+  validateUser(req: Request & { ability: any, user: User }, res: Response, next: NextFunction) {
     validateUser(req, res, next);
   }
 
@@ -20,19 +20,19 @@ export default class StationController {
   async create(req: Request, res: Response, next: NextFunction) {
     try {
       const [station] = await Station.findOrCreate({
-         where: { name: req.body.name }
+        where: { name: req.body.name }
       });
       if (req.body.line.id) {
         const line = req.body.line;
-        if(station.id) {
+        if (station.id) {
           await station.$add("line", line.id, {
-              through: { stationOrder: line.LineStation.stationOrder }
-        });
+            through: { stationOrder: line.LineStation.stationOrder }
+          });
+        }
+        const lines = await station.$get("lines");
+        res.status(201).json({ station, lines });
       }
-      const lines = await station.$get("lines");
-      res.status(201).json({station, lines});
-    }
-  
+
     } catch (e) {
       const ER_DUP_ENTRY = "ER_DUP_ENTRY";
       if (e.original.code === ER_DUP_ENTRY) {
@@ -124,34 +124,44 @@ export default class StationController {
       });
       res.sendStatus(200);
     } catch (e) {
-      next(e);
+      const ER_ROW_IS_REFERENCED_2 = "ER_ROW_IS_REFERENCED_2";
+      if (e.original.code === ER_ROW_IS_REFERENCED_2) {
+        res.sendStatus(400);
+      } else {
+        next(e);
+      }
     }
   }
 
   @Delete("/:id/:lineId")
   async deleteLine(req: Request, res: Response, next: NextFunction) {
     try {
-      await LineStation.destroy({
-        where: {
-          stationId: req.params.id,
-          lineId: req.params.lineId
-        }
-      });
       const count: any = await LineStation.count({
         where: {
           stationId: req.params.id
         }
       });
-      if (count < 1) {
+      if (count <= 1) {
         await Station.destroy({
           where: {
             id: req.params.id
           }
         })
       }
+      await LineStation.destroy({
+        where: {
+          stationId: req.params.id,
+          lineId: req.params.lineId
+        }
+      });
       res.sendStatus(200);
     } catch (e) {
-      next(e);
+      const ER_ROW_IS_REFERENCED_2 = "ER_ROW_IS_REFERENCED_2";
+      if (e.original.code === ER_ROW_IS_REFERENCED_2) {
+        res.sendStatus(400);
+      } else {
+        next(e);
+      }
     }
   }
 

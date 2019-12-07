@@ -475,36 +475,45 @@ export default class TrainController {
       });
       res.sendStatus(200);
     } catch (e) {
-      next(e);
+      const ER_ROW_IS_REFERENCED_2 = "ER_ROW_IS_REFERENCED_2";
+      if (e.original.code === ER_ROW_IS_REFERENCED_2) {
+        res.sendStatus(400);
+      } else {
+        next(e);
+      }
     }
   }
 
   @Delete("/:id/lines/:lineId")
   async deleteLine(req: Request, res: Response, next: NextFunction) {
     try {
-      await LineStationTrain.destroy({
-        where: {
-          trainId: req.params.id,
-          lineId: req.params.lineId
-        }
-      });
-
       const count: any = await LineStationTrain.count({
         where: {
           trainId: req.params.id
         }
       });
 
-      if (count < 1) {
+      if (count <= 1) {
         await Train.destroy({
           where: {
             id: req.params.id
           }
         })
       }
+      await LineStationTrain.destroy({
+        where: {
+          trainId: req.params.id,
+          lineId: req.params.lineId
+        }
+      });
       res.sendStatus(200);
     } catch (e) {
-      next(e);
+      const ER_ROW_IS_REFERENCED_2 = "ER_ROW_IS_REFERENCED_2";
+      if (e.original.code === ER_ROW_IS_REFERENCED_2) {
+        res.sendStatus(400);
+      } else {
+        next(e);
+      }
     }
   }
 
