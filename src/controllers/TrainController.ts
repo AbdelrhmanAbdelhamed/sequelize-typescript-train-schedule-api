@@ -38,7 +38,12 @@ export default class TrainController {
       }
       res.status(201).json(train);
     } catch (e) {
-      next(e);
+      const ER_DUP_ENTRY = "ER_DUP_ENTRY";
+      if (e.original.code === ER_DUP_ENTRY) {
+        res.sendStatus(409);
+      } else {
+        next(e);
+      }
     }
   }
 
@@ -94,7 +99,12 @@ export default class TrainController {
         res.status(201).json(trainRun);
       }
     } catch (e) {
-      next(e);
+      const ER_DUP_ENTRY = "ER_DUP_ENTRY";
+      if (e.original.code === ER_DUP_ENTRY) {
+        res.sendStatus(409);
+      } else {
+        next(e);
+      }
     }
   }
 
@@ -116,7 +126,12 @@ export default class TrainController {
       }
       res.json(stations);
     } catch (e) {
-      next(e);
+      const ER_DUP_ENTRY = "ER_DUP_ENTRY";
+      if (e.original.code === ER_DUP_ENTRY) {
+        res.sendStatus(409);
+      } else {
+        next(e);
+      }
     }
   }
 
@@ -330,9 +345,9 @@ export default class TrainController {
         res.json(trainRunsWithStations);
       } else {
         const train = await Train.findByPk(req.params.id);
-        if(train) {
-          res.json({train});
-        } 
+        if (train) {
+          res.json({ train });
+        }
       }
 
     } catch (e) {

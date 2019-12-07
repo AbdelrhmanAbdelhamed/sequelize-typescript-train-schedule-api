@@ -14,7 +14,12 @@ export default class PolicePersonController {
       const policePerson = await PolicePerson.create(req.body);
       res.status(201).json(policePerson);
     } catch (e) {
-      next(e);
+      const ER_DUP_ENTRY = "ER_DUP_ENTRY";
+      if (e.original.code === ER_DUP_ENTRY) {
+        res.sendStatus(409);
+      } else {
+        next(e);
+      }
     }
   }
 

@@ -22,7 +22,12 @@ export default class LineController {
       const line = await Line.create(req.body);
       res.status(201).json(line);
     } catch (e) {
-      next(e);
+      const ER_DUP_ENTRY = "ER_DUP_ENTRY";
+      if (e.original.code === ER_DUP_ENTRY) {
+        res.sendStatus(409);
+      } else {
+        next(e);
+      }
     }
   }
 
