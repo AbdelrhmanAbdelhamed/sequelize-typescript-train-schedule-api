@@ -2,11 +2,11 @@ import { Request, Response, NextFunction } from 'express';
 import { BasePath, Post, Get, Patch, Delete, Use } from 'decorate-express';
 
 import { Line } from "../models/Line";
-import { Train } from '../models/Train';
 import { Station } from '../models/Station';
 import validateUser from '../middlewares/ValidateUser';
 import { literal, fn, col } from 'sequelize';
 import { User } from '../models/User';
+import { Train } from '../models/Train';
 
 @BasePath('/api/lines')
 export default class LineController {
@@ -57,10 +57,7 @@ export default class LineController {
   @Get('/:id')
   async getById(req: Request, res: Response, next: NextFunction) {
     try {
-      const line = await Line.findByPk(req.params.id, {
-        include: [Station, Train],
-        order: [[literal('`stations.LineStation.stationOrder`'), 'ASC']]
-      });
+      const line = await Line.findByPk(req.params.id);
       res.json(line);
     } catch (e) {
       next(e);
@@ -70,14 +67,41 @@ export default class LineController {
   @Get('/:id/stations')
   async getStations(req: Request, res: Response, next: NextFunction) {
     try {
-      const stations = await Station.findAll({
+      let stations = await Station.findAll({
         include: [{
           model: Line,
-          where: { id: req.params.id }
+          required: true,
+          through: { where: { lineId: req.params.id } }
         }],
         order: [[literal('`lines.LineStation.stationOrder`'), 'ASC']]
       });
+      if(stations.length <= 0) {
+        const line = await Line.findByPk(req.params.id);
+        stations = {line};
+      }
       res.json(stations);
+    } catch (e) {
+      next(e);
+    }
+  }
+
+  @Get('/:id/trains')
+  async getTrains(req: Request & { ability: any, user: User }, res: Response, next: NextFunction) {
+    try {
+      let trains = await Train.scope({ method: ['accessibleBy', req.ability] }).findAll({
+        include: [
+          {
+            model: Line,
+            required: true,
+            through: { where: { lineId: req.params.id } }
+          }
+        ]
+      });
+      if(trains.length <= 0) {
+        const line = await Line.findByPk(req.params.id);
+        trains = {line};
+      }
+      res.json(trains);
     } catch (e) {
       next(e);
     }

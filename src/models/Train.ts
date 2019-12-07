@@ -21,7 +21,7 @@ import toSequelizeQuery from "../utils/toSequelizeQuery";
 import isEmpty from "../utils/isEmpty";
 
 @Scopes(() => ({
-  accessibleBy: function(ability, action = 'read') {
+  accessibleBy: (ability, action = 'read') => {
     const conditions = toSequelizeQuery(ability, 'UserTrain', action);
     const includeConditions = !isEmpty(conditions);
     return {
