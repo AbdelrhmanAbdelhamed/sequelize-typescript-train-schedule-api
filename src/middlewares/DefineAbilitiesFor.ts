@@ -8,7 +8,7 @@ export function defineAbilitiesFor(user: User) {
   if (user && user.role) {
 
     if (user.role!.name === 'user') {
-      allow('read', ['all']);
+      allow('read', ['Train', 'TrainRun', 'Line', 'Station']);
     }
 
     else if (user.role!.name === 'editor') {
