@@ -10,7 +10,7 @@ import { Station } from "../models/Station";
 import { LineStation } from "../models/LineStation";
 import { LineStationTrain } from "../models/LineStationTrain";
 import { Line } from "../models/Line";
-import { QueryTypes } from "sequelize";
+import { QueryTypes, col } from "sequelize";
 import { sequelize } from "../sequelize";
 import validateUser from "../middlewares/ValidateUser";
 import { User } from "../models/User";
@@ -487,13 +487,14 @@ export default class TrainController {
   @Delete("/:id/lines/:lineId")
   async deleteLine(req: Request, res: Response, next: NextFunction) {
     try {
-      const count: any = await LineStationTrain.count({
+      const lineTrainStations: any = await LineStationTrain.findAll({
         where: {
           trainId: req.params.id
-        }
+        },
+        group: col('trainId')
       });
 
-      if (count <= 1) {
+      if (lineTrainStations.length <= 1) {
         await Train.destroy({
           where: {
             id: req.params.id
