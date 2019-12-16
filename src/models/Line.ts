@@ -13,16 +13,18 @@ import { Station } from "./Station";
 import { LineStation } from "./LineStation";
 import { Train } from "./Train";
 import { LineStationTrain } from "./LineStationTrain";
+
 @Table({
   underscored: true
 })
 export class Line extends Model<Line> {
+  BelongsToMany: any = BelongsToMany;
 
   @Unique
   @Column
   name!: string;
 
-  @BelongsToMany(() => Station, {
+  @this.BelongsToMany(() => Station, {
     through: {
       model: () => LineStation,
       unique: false,
@@ -30,8 +32,8 @@ export class Line extends Model<Line> {
     }
   })
   stations?: Array<Station & { LineStation: LineStation }>;
-  
-  @BelongsToMany(() => Train, {
+
+  @this.BelongsToMany(() => Train, {
     through: {
       model: () => LineStationTrain,
       unique: false,

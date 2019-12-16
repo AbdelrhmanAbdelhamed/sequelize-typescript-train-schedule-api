@@ -16,6 +16,7 @@ import { LineStation } from "./LineStation";
   underscored: true
 })
 export class Station extends Model<Station> {
+  BelongsToMany: any = BelongsToMany;
 
   @Unique
   @Column
@@ -33,7 +34,7 @@ export class Station extends Model<Station> {
   })
   updatedAt?: Date;
 
-  @BelongsToMany(() => Line, {
+  @this.BelongsToMany(() => Line, {
     through: {
       model: () => LineStation,
       unique: false,
