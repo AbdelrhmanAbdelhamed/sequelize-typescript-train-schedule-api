@@ -3,7 +3,7 @@ import * as jwt from "jsonwebtoken";
 import * as util from "util";
 import { User } from "../models/User";
 import { Role } from "../models/Role";
-import { unpackRules } from '@casl/ability/extra'
+import { unpackRules } from '@casl/ability/extra';
 import { Ability } from "@casl/ability";
 
 export default async function validateUser(

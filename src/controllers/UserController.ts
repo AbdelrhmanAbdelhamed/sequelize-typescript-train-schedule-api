@@ -69,7 +69,7 @@ export default class UserController {
 
       const [policeDepartment] = await PoliceDepartment.findOrCreate({
         where: { name: req.body.policeDepartment.name }
-      })
+      });
 
       if (req.body.password) req.body.password = await User.hashPassword(req.body.password);
       const user: User = await User.create(req.body);

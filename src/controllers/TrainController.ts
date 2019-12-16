@@ -460,8 +460,13 @@ export default class TrainController {
         }
       });
       res.sendStatus(200);
-    } catch (e) {
-      next(e);
+    }  catch (e) {
+      const ER_DUP_ENTRY = "ER_DUP_ENTRY";
+      if (e.original.code === ER_DUP_ENTRY) {
+        res.sendStatus(409);
+      } else {
+        next(e);
+      }
     }
   }
 
@@ -491,7 +496,7 @@ export default class TrainController {
         where: {
           trainId: req.params.id
         },
-        group: col('trainId')
+        group: [col('trainId'), col('lineId')]
       });
 
       if (lineTrainStations.length <= 1) {
@@ -522,7 +527,7 @@ export default class TrainController {
     try {
       const trainsQuery = await sequelize.query(
         `
-        SELECT 
+        SELECT
             trains.id
         FROM
             trains
@@ -555,10 +560,11 @@ export default class TrainController {
         }
       );
 
-      const trains = await Train.scope({ method: ['accessibleBy', req.ability] }).findAll({
+      const trains = await Train.findAll({
         where: {
           id: trainsQuery.map(train => train.id)
-        }
+        },
+        include: [User, Line]
       });
       res.json(trains);
     } catch (e) {

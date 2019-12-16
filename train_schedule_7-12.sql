@@ -36,15 +36,6 @@ INSERT INTO `line_stations` VALUES (39,6,1,1,'2019-12-03 09:54:09','2019-12-04 0
 UNLOCK TABLES;
 
 --
--- Dumping data for table `line_train_stations`
---
-
-LOCK TABLES `line_train_stations` WRITE;
-/*!40000 ALTER TABLE `line_train_stations` DISABLE KEYS */;
-/*!40000 ALTER TABLE `line_train_stations` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Dumping data for table `lines`
 --
 
