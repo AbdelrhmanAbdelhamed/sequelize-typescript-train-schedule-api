@@ -38,10 +38,7 @@ export class Station extends Model<Station> {
       model: () => LineStation,
       unique: false
     },
-    foreignKey: {
-      name: 'station_id',
-      unique: false
-    }
+    foreignKey: 'station_id'
   })
   lines?: Array<Line & { LineStation: LineStation }>;
 
