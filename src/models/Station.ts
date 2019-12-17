@@ -37,7 +37,10 @@ export class Station extends Model<Station> {
     through: {
       model: () => LineStation,
       unique: false,
-      foreignKey: 'station_id'
+      foreignKey: {
+        name: 'station_id',
+        unique: false
+      }
     }
   })
   lines?: Array<Line & { LineStation: LineStation }>;

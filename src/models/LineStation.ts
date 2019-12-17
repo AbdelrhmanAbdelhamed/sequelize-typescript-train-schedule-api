@@ -50,7 +50,10 @@ export class LineStation extends Model<LineStation> {
     through: {
       model: () => LineStationTrain,
       unique: false,
-      foreignKey: 'line_station_id'
+      foreignKey: {
+        name: 'line_station_id',
+        unique: false
+      }
     }
   })
   trains?: Array<Train & { LineStationTrain: LineStationTrain }>;
@@ -59,7 +62,10 @@ export class LineStation extends Model<LineStation> {
     through: {
       model: () => LineStationTrain,
       unique: false,
-      foreignKey: 'line_station_id'
+      foreignKey: {
+        name: 'line_station_id',
+        unique: false
+      }
     }
   })
   lines?: Array<Line & { LineStationTrain: LineStationTrain }>;
