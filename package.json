@@ -6,8 +6,7 @@
   "scripts": {
     "start": "node build/index.js",
     "dev": "ts-node-dev --inspect --respawn ./src src/index.ts",
-    "build": "npx tsc",
-    "prestart": "npm run build",
+    "build": "tsc",
     "postinstall": "npm run build"
   },
   "author": "",
