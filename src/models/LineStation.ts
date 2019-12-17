@@ -19,7 +19,6 @@ import { DataTypes } from "sequelize";
   underscored: true
 })
 export class LineStation extends Model<LineStation> {
-  BelongsToMany: any = BelongsToMany;
 
   @Column({
     type: DataTypes.INTEGER,
@@ -47,7 +46,7 @@ export class LineStation extends Model<LineStation> {
   })
   stationOrder!: number;
 
-  @this.BelongsToMany(() => Train, {
+  @BelongsToMany(() => Train, {
     through: {
       model: () => LineStationTrain,
       unique: false,
@@ -56,7 +55,7 @@ export class LineStation extends Model<LineStation> {
   })
   trains?: Array<Train & { LineStationTrain: LineStationTrain }>;
 
-  @this.BelongsToMany(() => Line, {
+  @BelongsToMany(() => Line, {
     through: {
       model: () => LineStationTrain,
       unique: false,

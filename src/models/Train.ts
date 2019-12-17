@@ -43,7 +43,6 @@ import isEmpty from "../utils/isEmpty";
   underscored: true
 })
 export class Train extends Model<Train> {
-  BelongsToMany: any = BelongsToMany;
 
   @Unique
   @Column
@@ -60,7 +59,7 @@ export class Train extends Model<Train> {
   })
   lineStations?: Array<LineStation & { LineStationTrain: LineStationTrain }>;
 
-  @this.BelongsToMany(() => Line, {
+  @BelongsToMany(() => Line, {
     through: {
       model: () => LineStationTrain,
       unique: false,
