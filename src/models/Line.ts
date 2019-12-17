@@ -25,7 +25,7 @@ export class Line extends Model<Line> {
 
   @BelongsToMany(() => Station, {
     through: {
-      model: LineStation,
+      model: () => LineStation,
       unique: false
     },
     foreignKey: {
@@ -37,7 +37,7 @@ export class Line extends Model<Line> {
 
   @BelongsToMany(() => Train, {
     through: {
-      model: LineStationTrain,
+      model: () => LineStationTrain,
       unique: false
     },
     foreignKey: {

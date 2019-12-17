@@ -48,7 +48,7 @@ export class LineStation extends Model<LineStation> {
 
   @BelongsToMany(() => Train, {
     through: {
-      model: LineStationTrain,
+      model: () => LineStationTrain,
       unique: false
     },
     foreignKey: {
@@ -60,7 +60,7 @@ export class LineStation extends Model<LineStation> {
 
   @BelongsToMany(() => Line, {
     through: {
-      model: LineStationTrain,
+      model: () => LineStationTrain,
       unique: false,
       foreignKey: {
         name: 'line_station_id',
