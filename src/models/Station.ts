@@ -36,11 +36,11 @@ export class Station extends Model<Station> {
   @BelongsToMany(() => Line, {
     through: {
       model: () => LineStation,
-      unique: false,
-      foreignKey: {
-        name: 'station_id',
-        unique: false
-      }
+      unique: false
+    },
+    foreignKey: {
+      name: 'station_id',
+      unique: false
     }
   })
   lines?: Array<Line & { LineStation: LineStation }>;
