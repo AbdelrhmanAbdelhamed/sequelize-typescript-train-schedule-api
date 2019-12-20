@@ -11,9 +11,10 @@ import { LineStation } from "../models/LineStation";
 import { LineStationTrain } from "../models/LineStationTrain";
 import { Line } from "../models/Line";
 import { QueryTypes, col } from "sequelize";
-import { sequelize } from "../sequelize";
 import validateUser from "../middlewares/ValidateUser";
 import { User } from "../models/User";
+
+import { sequelize, TrainRunRevision } from "../sequelize";
 
 @BasePath("/api/trains")
 export default class TrainController {
@@ -185,7 +186,8 @@ export default class TrainController {
         where: {
           id: req.params.id,
           trainId: req.params.trainId
-        }
+        },
+        individualHooks: true,
       });
       res.sendStatus(200);
     } catch (e) {
@@ -354,6 +356,39 @@ export default class TrainController {
       next(e);
     }
   }
+
+  @Get("/runs/revisions")
+    async getAllRunsRevisions(req: Request, res: Response, next: NextFunction) {
+      try {
+        const trainRunsRevisions = await TrainRunRevision.findAll({
+          order: [[col('revisionValidFrom'), 'DESC'], [col('revisionValidTo'), 'DESC']]
+        });
+        const results = await Promise.all(trainRunsRevisions.map(async trainRunRevision => {
+          const train = await Train.findByPk(trainRunRevision.trainId);
+          return {train, item: trainRunRevision};
+        }));
+        res.json(results);
+      } catch (e) {
+        next(e);
+      }
+  }
+
+  @Get("/:id/runs/revisions")
+  async getRunsRevisionsByTrainId(req: Request, res: Response, next: NextFunction) {
+    try {
+      const trainRunRevisions = await TrainRunRevision.findAll({
+        where: {
+          trainId: req.params.id
+        },
+        order: [[col('revisionValidFrom'), 'DESC'], [col('revisionValidTo'), 'DESC']]
+      });
+      const train = await Train.findByPk(req.params.id);
+      const results = {train, items: trainRunRevisions};
+      res.json(results);
+    } catch (e) {
+      next(e);
+    }
+}
 
   @Get("/:id")
   async getById(req: Request, res: Response, next: NextFunction) {

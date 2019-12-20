@@ -5,6 +5,7 @@ import { User } from "../models/User";
 import { Role } from "../models/Role";
 import { unpackRules } from '@casl/ability/extra';
 import { Ability } from "@casl/ability";
+import { sequelize } from "../sequelize";
 
 export default async function validateUser(
   req: Request & {ability: any , user: User},
@@ -29,6 +30,7 @@ export default async function validateUser(
       } else {
         req.ability = new Ability(unpackedRules);
         req.user = user;
+        sequelize.whoDunnit = req.user.fullName;
         next();
       }
     } else {
