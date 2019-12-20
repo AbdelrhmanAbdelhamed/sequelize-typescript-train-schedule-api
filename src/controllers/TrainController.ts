@@ -10,7 +10,7 @@ import { Station } from "../models/Station";
 import { LineStation } from "../models/LineStation";
 import { LineStationTrain } from "../models/LineStationTrain";
 import { Line } from "../models/Line";
-import { QueryTypes, col } from "sequelize";
+import { QueryTypes, col, Transaction } from "sequelize";
 import validateUser from "../middlewares/ValidateUser";
 import { User } from "../models/User";
 
@@ -50,8 +50,9 @@ export default class TrainController {
 
   @Post("/:id/runs")
   async addRun(req: Request, res: Response, next: NextFunction) {
+    const transaction: Transaction = await sequelize.transaction();
     try {
-      const train: Train = await Train.findByPk(req.params.id);
+      const train: Train = await Train.findByPk(req.params.id, { transaction });
       if (train) {
         const { policePeople } = req.body;
         const policePeopleData: any = await Promise.all(
@@ -60,10 +61,12 @@ export default class TrainController {
               const { rank, policeDepartment } = policePerson;
               return [
                 PoliceDepartment.findOrCreate({
-                  where: { name: policeDepartment.name }
+                  where: { name: policeDepartment.name },
+                  transaction
                 }),
                 Rank.findOrCreate({
-                  where: { name: rank.name }
+                  where: { name: rank.name },
+                  transaction
                 })
               ];
             })
@@ -81,25 +84,29 @@ export default class TrainController {
                 rankId,
                 policeDepartmentId,
                 phoneNumber: policePerson.phoneNumber
-              }
+              },
+              transaction
             });
           })
         );
 
-        const trainRun: TrainRun = await TrainRun.create(req.body);
+        const trainRun: TrainRun = await TrainRun.create(req.body, { transaction });
         await Promise.all(
           resultPolicePeople.map((resultPolicePerson, index) => {
             return trainRun.$add("policePerson", resultPolicePerson[0].id, {
               through: {
                 fromStationId: policePeople[index].fromStationId,
                 toStationId: policePeople[index].toStationId
-              }
-            })
+              },
+              transaction
+            });
           })
-        )
+        );
+        await transaction.commit();
         res.status(201).json(trainRun);
       }
     } catch (e) {
+      await transaction.rollback();
       const ER_DUP_ENTRY = "ER_DUP_ENTRY";
       if (e.original.code === ER_DUP_ENTRY) {
         res.sendStatus(409);
@@ -181,6 +188,7 @@ export default class TrainController {
 
   @Delete("/:trainId/runs/:id")
   async deleteRun(req: Request, res: Response, next: NextFunction) {
+    const transaction: Transaction = await sequelize.transaction();
     try {
       await TrainRun.destroy({
         where: {
@@ -188,9 +196,12 @@ export default class TrainController {
           trainId: req.params.trainId
         },
         individualHooks: true,
+        transaction
       });
+      await transaction.commit();
       res.sendStatus(200);
     } catch (e) {
+      await transaction.rollback();
       next(e);
     }
   }
