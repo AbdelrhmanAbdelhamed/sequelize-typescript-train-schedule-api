@@ -1,4 +1,5 @@
 import {
+  Index,
   Column,
   CreatedAt,
   Model,
@@ -39,6 +40,12 @@ export class LineStation extends Model<LineStation> {
     allowNull: false
   })
   stationId!: number;
+
+  @Index({
+    order: 'ASC',
+  })
+  // tslint:disable-next-line: variable-name
+  station_order!: number;
 
   @Column({
     unique: "line_station_order_unique",
