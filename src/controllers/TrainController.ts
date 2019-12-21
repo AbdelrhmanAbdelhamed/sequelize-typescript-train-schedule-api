@@ -10,7 +10,7 @@ import { Station } from "../models/Station";
 import { LineStation } from "../models/LineStation";
 import { LineStationTrain } from "../models/LineStationTrain";
 import { Line } from "../models/Line";
-import { QueryTypes, col, Transaction } from "sequelize";
+import { QueryTypes, col, Transaction, literal } from "sequelize";
 import validateUser from "../middlewares/ValidateUser";
 import { User } from "../models/User";
 
@@ -424,7 +424,12 @@ export default class TrainController {
         include: [{
           model: LineStation,
           through: { where: { lineId: req.params.lineId } }
-        }]
+        }],
+        order: [
+          [literal('`lineStations.LineStationTrain.departureTime`'), 'ASC'],
+          [literal('`lineStations.LineStationTrain.arrivalTime`'), 'ASC'],
+          [literal('`lineStations.stationOrder`'), 'ASC']
+        ]
       });
       const stations: any = await Promise.all(trains.lineStations.map(lineStation => {
         return Station.findByPk(lineStation.stationId);

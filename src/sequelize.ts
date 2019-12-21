@@ -11,8 +11,8 @@ export const sequelize: Sequelize &
   host:  "localhost",
   port: 3306,
   dialect: "mysql",
-  define: { charset: 'utf8' },
-  dialectOptions: { charset: 'utf8_general_ci' },
+  define: { charset: "utf8"},
+  dialectOptions: { charset: "utf8_general_ci" },
   timezone: "Africa/Cairo",
   pool: {
     max: 100,
@@ -22,7 +22,11 @@ export const sequelize: Sequelize &
   },
   // tslint:disable-next-line: no-console
   logging: false,
-  models: [__dirname + '/models']
+  models: [__dirname + "/models"]
 });
 
-export const TrainRunRevision: any = trackRevisions(TrainRun);
+export const TrainRunRevision: any = trackRevisions(TrainRun, {indexes: [
+  {
+    fields: ['train_id'],
+  },
+]});

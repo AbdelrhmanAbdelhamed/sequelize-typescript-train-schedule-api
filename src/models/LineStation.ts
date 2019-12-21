@@ -1,4 +1,5 @@
 import {
+  Index,
   Column,
   CreatedAt,
   Model,
@@ -40,6 +41,12 @@ export class LineStation extends Model<LineStation> {
   })
   stationId!: number;
 
+  @Index({
+    order: 'ASC',
+  })
+  // tslint:disable-next-line: variable-name
+  station_order!: number;
+
   @Column({
     unique: "line_station_order_unique",
     allowNull: false
@@ -49,18 +56,18 @@ export class LineStation extends Model<LineStation> {
   @BelongsToMany(() => Train, {
     through: {
       model: () => LineStationTrain,
-      unique: false,
-      foreignKey: 'line_station_id'
-    }
+      unique: false
+    },
+    foreignKey: 'line_station_id'
   })
   trains?: Array<Train & { LineStationTrain: LineStationTrain }>;
 
   @BelongsToMany(() => Line, {
     through: {
       model: () => LineStationTrain,
-      unique: false,
-      foreignKey: 'line_station_id'
-    }
+      unique: false
+    },
+    foreignKey: 'line_station_id'
   })
   lines?: Array<Line & { LineStationTrain: LineStationTrain }>;
 
