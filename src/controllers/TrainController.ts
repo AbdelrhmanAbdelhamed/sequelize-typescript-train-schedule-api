@@ -45,7 +45,7 @@ export default class TrainController {
       res.status(201).json(train);
     } catch (e) {
       const ER_DUP_ENTRY = "ER_DUP_ENTRY";
-      if (e.original.code === ER_DUP_ENTRY) {
+      if (e.original && e.original.code === ER_DUP_ENTRY) {
         res.sendStatus(409);
       } else {
         next(e);
@@ -113,7 +113,7 @@ export default class TrainController {
     } catch (e) {
       await transaction.rollback();
       const ER_DUP_ENTRY = "ER_DUP_ENTRY";
-      if (e.original.code === ER_DUP_ENTRY) {
+      if (e.original && e.original.code === ER_DUP_ENTRY) {
         res.sendStatus(409);
       } else {
         next(e);
@@ -140,7 +140,7 @@ export default class TrainController {
       res.json(stations);
     } catch (e) {
       const ER_DUP_ENTRY = "ER_DUP_ENTRY";
-      if (e.original.code === ER_DUP_ENTRY) {
+      if (e.original && e.original.code === ER_DUP_ENTRY) {
         res.sendStatus(409);
       } else {
         next(e);
@@ -532,7 +532,7 @@ export default class TrainController {
       res.sendStatus(200);
     }  catch (e) {
       const ER_DUP_ENTRY = "ER_DUP_ENTRY";
-      if (e.original.code === ER_DUP_ENTRY) {
+      if (e.original && e.original.code === ER_DUP_ENTRY) {
         res.sendStatus(409);
       } else {
         next(e);
@@ -551,7 +551,7 @@ export default class TrainController {
       res.sendStatus(200);
     } catch (e) {
       const ER_ROW_IS_REFERENCED_2 = "ER_ROW_IS_REFERENCED_2";
-      if (e.original.code === ER_ROW_IS_REFERENCED_2) {
+      if (e.original && e.original.code === ER_ROW_IS_REFERENCED_2) {
         res.sendStatus(400);
       } else {
         next(e);
@@ -585,7 +585,7 @@ export default class TrainController {
       res.sendStatus(200);
     } catch (e) {
       const ER_ROW_IS_REFERENCED_2 = "ER_ROW_IS_REFERENCED_2";
-      if (e.original.code === ER_ROW_IS_REFERENCED_2) {
+      if (e.original && e.original.code === ER_ROW_IS_REFERENCED_2) {
         res.sendStatus(400);
       } else {
         next(e);

@@ -15,7 +15,7 @@ export default class PolicePersonController {
       res.status(201).json(policePerson);
     } catch (e) {
       const ER_DUP_ENTRY = "ER_DUP_ENTRY";
-      if (e.original.code === ER_DUP_ENTRY) {
+      if (e.original && e.original.code === ER_DUP_ENTRY) {
         res.sendStatus(409);
       } else {
         next(e);
@@ -62,4 +62,3 @@ export default class PolicePersonController {
   }
 
 }
-
