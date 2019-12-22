@@ -26,7 +26,6 @@ import isEmpty from "../utils/isEmpty";
     const includeConditions = !isEmpty(conditions);
     return {
       include: [
-        Line,
         {
           model: User,
           required: includeConditions,
@@ -62,9 +61,9 @@ export class Train extends Model<Train> {
   @BelongsToMany(() => Line, {
     through: {
       model: () => LineStationTrain,
-      unique: false,
-      foreignKey: 'train_id'
-    }
+      unique: false
+    },
+    foreignKey: 'train_id'
   })
   lines?: Array<Line & { LineStationTrain: LineStationTrain }>;
 

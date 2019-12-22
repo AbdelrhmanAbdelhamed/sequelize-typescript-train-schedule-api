@@ -1,5 +1,6 @@
 import * as express from 'express';
 import * as bodyParser from 'body-parser';
+import * as compression from 'compression';
 import * as helmet from 'helmet';
 import * as cors from 'cors';
 import * as errorhandler from 'strong-error-handler';
@@ -19,6 +20,9 @@ import UserController from './controllers/UserController';
 import RoleController from './controllers/RoleController';
 
 export const app = express();
+
+// use gzip/deflate compression for responses
+app.use(compression());
 
 // allow cross origin requests
 app.use(cors());

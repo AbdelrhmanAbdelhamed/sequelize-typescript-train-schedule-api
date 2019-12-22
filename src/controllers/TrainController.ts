@@ -16,6 +16,11 @@ import { User } from "../models/User";
 
 import { sequelize, TrainRunRevision } from "../sequelize";
 
+import { rulesToFields } from "@casl/ability/extra";
+import isEmpty from "../utils/isEmpty";
+import mergeObjectsKeyIntoArray from "../utils/mergeObjectsKeyIntoArray";
+import joinObject from "../utils/joinObject";
+
 @BasePath("/api/trains")
 export default class TrainController {
   @Use()
@@ -213,10 +218,10 @@ export default class TrainController {
 
       if (trainRuns) {
         const policePeopleStations: any = await Promise.all(trainRuns.map(async trainRun => {
-          return await Promise.all(trainRun.policePeople!.map((policePerson: any) => {
+          return Promise.all(trainRun.policePeople!.map((policePerson: any) => {
             return [Station.findByPk(policePerson.TrainRunPolicePerson.fromStationId),
             Station.findByPk(policePerson.TrainRunPolicePerson.toStationId)
-            ]
+            ];
           }).map(Promise.all, Promise));
         }));
         const trainRunsWithStations: any = trainRuns.map((trainRun, index) => {
@@ -250,11 +255,11 @@ export default class TrainController {
                 toStationId: policePerson.TrainRunPolicePerson.toStationId,
                 trainRunId: policePerson.TrainRunPolicePerson.trainRunId,
                 updatedAt: policePerson.TrainRunPolicePerson.updatedAt,
-                fromStation: fromStation,
-                toStation: toStation
+                fromStation,
+                toStation
               }
-            }
-          })
+            };
+          });
           return {
             createdAt: trainRun.createdAt,
             day: trainRun.day,
@@ -268,8 +273,8 @@ export default class TrainController {
               number: trainRun.train!.number,
               updatedAt: trainRun.train!.updatedAt
             }
-          }
-        })
+          };
+        });
         res.json(trainRunsWithStations);
       }
 
@@ -298,10 +303,10 @@ export default class TrainController {
 
       if (trainRuns && trainRuns.length > 0) {
         const policePeopleStations: any = await Promise.all(trainRuns.map(async trainRun => {
-          return await Promise.all(trainRun.policePeople!.map((policePerson: any) => {
+          return Promise.all(trainRun.policePeople!.map((policePerson: any) => {
             return [Station.findByPk(policePerson.TrainRunPolicePerson.fromStationId),
             Station.findByPk(policePerson.TrainRunPolicePerson.toStationId)
-            ]
+            ];
           }).map(Promise.all, Promise));
         }));
         const trainRunsWithStations: any = trainRuns.map((trainRun, index) => {
@@ -335,11 +340,11 @@ export default class TrainController {
                 toStationId: policePerson.TrainRunPolicePerson.toStationId,
                 trainRunId: policePerson.TrainRunPolicePerson.trainRunId,
                 updatedAt: policePerson.TrainRunPolicePerson.updatedAt,
-                fromStation: fromStation,
-                toStation: toStation
+                fromStation,
+                toStation
               }
-            }
-          })
+            };
+          });
           return {
             createdAt: trainRun.createdAt,
             day: trainRun.day,
@@ -353,8 +358,8 @@ export default class TrainController {
               number: trainRun.train!.number,
               updatedAt: trainRun.train!.updatedAt
             }
-          }
-        })
+          };
+        });
         res.json(trainRunsWithStations);
       } else {
         const train = await Train.findByPk(req.params.id);
@@ -463,8 +468,22 @@ export default class TrainController {
             updatedAt: lineStation.LineStationTrain.updatedAt
           }
         };
-      })
+      });
       res.json(lineStationTrains);
+    } catch (e) {
+      next(e);
+    }
+  }
+
+  @Get("/:id/lines")
+  async getLines(req: Request, res: Response, next: NextFunction) {
+    try {
+      const train: Train = await Train.findByPk(req.params.id);
+      let lines = [];
+      if (train) {
+       lines = await train.$get("lines", { group: "id" });
+      }
+      res.json(lines);
     } catch (e) {
       next(e);
     }
@@ -474,7 +493,7 @@ export default class TrainController {
   async getStations(req: Request, res: Response, next: NextFunction) {
     try {
       const train: Train = await Train.findByPk(req.params.id, { include: [LineStation] });
-      let stations
+      let stations;
       if (train && train.lineStations) {
         stations = await Promise.all(train.lineStations.map(async lineStation => {
           const stationItem = await Station.findByPk(lineStation.stationId);
@@ -555,7 +574,7 @@ export default class TrainController {
           where: {
             id: req.params.id
           }
-        })
+        });
       }
       await LineStationTrain.destroy({
         where: {
@@ -576,48 +595,58 @@ export default class TrainController {
 
   private async getByStations(req: Request & { ability: any, user: any }, res: Response, next: NextFunction) {
     try {
-      const trainsQuery = await sequelize.query(
+      const trains = await sequelize.query(
         `
         SELECT
-            trains.id
-        FROM
-            trains
-                JOIN
-            line_station_trains AS departure_line_station_trains ON departure_line_station_trains.train_id = trains.id
-                JOIN
-            line_station_trains arrival_line_station_trains ON arrival_line_station_trains.train_id = trains.id
-                JOIN
-            line_stations AS departure_line_station ON departure_line_station.id = departure_line_station_trains.line_station_id
-                JOIN
-            line_stations AS arrival_line_station ON arrival_line_station.id = arrival_line_station_trains.line_station_id
-                JOIN
-            stations AS departure_stations ON departure_stations.id = departure_line_station.station_id
-                JOIN
-            stations AS arrival_stations ON arrival_stations.id = arrival_line_station.station_id
-        WHERE
-            departure_stations.name = $departureStation
-                AND departure_line_station_trains.is_deprature = 1
-                AND arrival_stations.name = $arrivalStation
-                AND arrival_line_station_trains.is_arrival = 1
-                AND departure_line_station.station_order < arrival_line_station.station_order
+        DISTINCT \`lines\`.id AS \`lines.id\`,
+            Train.id,
+            Train.number,
+        users.id AS \`users.id\`,
+        \`users->UserTrain\`.user_id AS \`users.UserTrain.userId\`,
+        \`lines\`.name AS \`lines.name\`
+            FROM
+                trains AS Train
+            LEFT OUTER JOIN
+                (user_trains AS \`users->UserTrain\`
+            INNER JOIN users AS \`users\` ON users.id = \`users->UserTrain\`.user_id
+                                )
+              ON Train.id = \`users->UserTrain\`.train_id
+            LEFT OUTER JOIN
+                (line_station_trains AS \`lines->LineStationTrain\`
+            INNER JOIN \`lines\` AS \`lines\` ON \`lines\`.id = \`lines->LineStationTrain\`.line_id)
+              ON Train.id = \`lines->LineStationTrain\`.train_id
+        JOIN
+                line_station_trains AS departure_line_station_trains ON departure_line_station_trains.train_id = Train.id
+        JOIN
+                line_station_trains arrival_line_station_trains ON arrival_line_station_trains.train_id = Train.id
+        JOIN
+                line_stations AS departure_line_station ON departure_line_station.id = departure_line_station_trains.line_station_id
+        JOIN
+                line_stations AS arrival_line_station ON arrival_line_station.id = arrival_line_station_trains.line_station_id
+        JOIN
+                stations AS departure_stations ON departure_stations.id = departure_line_station.station_id
+        JOIN
+                stations AS arrival_stations ON arrival_stations.id = arrival_line_station.station_id
+            WHERE
+                departure_stations.name = $departureStation
+          AND departure_line_station_trains.is_deprature = 1
+          AND arrival_stations.name = $arrivalStation
+          AND arrival_line_station_trains.is_arrival = 1
+          AND departure_line_station.station_order < arrival_line_station.station_order
         `,
         {
           bind: {
             departureStation: req.query.departureStation,
             arrivalStation: req.query.arrivalStation
           },
+          model: Train,
+          mapToModel: true,
+          nest: true,
           raw: true,
           type: QueryTypes.SELECT
         }
       );
-
-      const trains = await Train.findAll({
-        where: {
-          id: trainsQuery.map(train => train.id)
-        },
-        include: [User, Line]
-      });
-      res.json(trains);
+      res.json(mergeObjectsKeyIntoArray(trains, "lines"));
     } catch (e) {
       next(e);
     }
@@ -625,8 +654,46 @@ export default class TrainController {
 
   private async getAll(req: Request & { ability: any, user: User }, res: Response, next: NextFunction) {
     try {
-      const trains = await Train.scope({ method: ['accessibleBy', req.ability] }).findAll();
-      res.json(trains);
+      const conditions = rulesToFields(req.ability, "read", "UserTrain");
+      const includeConditions = !isEmpty(conditions);
+      const userTrainsJoinType = includeConditions ? 'INNER JOIN' : 'LEFT OUTER JOIN';
+      const userJoinConditions = `users.id = \`users->UserTrain\`.user_id
+                            ${
+                              includeConditions
+                              ?
+                              'AND (`users->UserTrain`.' + joinObject(conditions, " = ", " OR ", "underscore") + ')'
+                              : ''
+                            }`;
+      const trains = await sequelize.query(
+        `
+        SELECT
+            DISTINCT \`lines\`.\`id\` AS \`lines.id\`,
+            \`Train\`.\`id\`,
+            \`Train\`.\`number\`,
+            \`users\`.\`id\` AS \`users.id\`,
+            \`users->UserTrain\`.\`user_id\` AS \`users.UserTrain.userId\`,
+            \`lines\`.\`name\` AS \`lines.name\`
+        FROM
+            \`trains\` AS \`Train\`
+        ${userTrainsJoinType}
+            (\`user_trains\` AS \`users->UserTrain\`
+        INNER JOIN \`users\` AS \`users\` ON ${userJoinConditions})
+          ON \`Train\`.\`id\` = \`users->UserTrain\`.\`train_id\`
+        LEFT OUTER JOIN
+            (\`line_station_trains\` AS \`lines->LineStationTrain\`
+        INNER JOIN \`lines\` AS \`lines\` ON \`lines\`.\`id\` = \`lines->LineStationTrain\`.\`line_id\`)
+          ON \`Train\`.\`id\` = \`lines->LineStationTrain\`.\`train_id\`;
+
+        `,
+          {
+            model: Train,
+            mapToModel: true,
+            nest: true,
+            raw: true,
+            type: QueryTypes.SELECT
+          }
+        );
+      res.json(mergeObjectsKeyIntoArray(trains, "lines"));
     } catch (e) {
       next(e);
     }
