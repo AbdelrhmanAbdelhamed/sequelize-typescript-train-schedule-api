@@ -22,20 +22,19 @@ export default class StationController {
       const [station] = await Station.findOrCreate({
         where: { name: req.body.name }
       });
-      if (req.body.line.id) {
-        const line = req.body.line;
-        if (station.id) {
-          await station.$add("line", line.id, {
-            through: { stationOrder: line.LineStation.stationOrder }
+      const line = req.body.line;
+      if (line.id && station.id) {
+        line.LineStation.stationId = station.id;
+        await station.$add("line", line.id, {
+            through: { stationOrder: line.LineStation.stationOrder, stationId: line.LineStation.stationId  }
           });
-        }
         const lines = await station.$get("lines");
         res.status(201).json({ station, lines });
       }
 
     } catch (e) {
       const ER_DUP_ENTRY = "ER_DUP_ENTRY";
-      if (e.original.code === ER_DUP_ENTRY) {
+      if (e.original && e.original.code === ER_DUP_ENTRY) {
         res.sendStatus(409);
       } else {
         next(e);
@@ -96,7 +95,7 @@ export default class StationController {
       res.sendStatus(200);
     } catch (e) {
       const ER_DUP_ENTRY = "ER_DUP_ENTRY";
-      if (e.original.code === ER_DUP_ENTRY) {
+      if (e.original && e.original.code === ER_DUP_ENTRY) {
         res.sendStatus(409);
       } else {
         next(e);
@@ -116,7 +115,7 @@ export default class StationController {
       res.sendStatus(200);
     } catch (e) {
         const ER_DUP_ENTRY = "ER_DUP_ENTRY";
-        if (e.original.code === ER_DUP_ENTRY) {
+        if (e.original && e.original.code === ER_DUP_ENTRY) {
           res.sendStatus(409);
         } else {
           next(e);
@@ -135,7 +134,7 @@ export default class StationController {
       res.sendStatus(200);
     } catch (e) {
       const ER_ROW_IS_REFERENCED_2 = "ER_ROW_IS_REFERENCED_2";
-      if (e.original.code === ER_ROW_IS_REFERENCED_2) {
+      if (e.original && e.original.code === ER_ROW_IS_REFERENCED_2) {
         res.sendStatus(400);
       } else {
         next(e);
@@ -156,7 +155,7 @@ export default class StationController {
           where: {
             id: req.params.id
           }
-        })
+        });
       }
       await LineStation.destroy({
         where: {
@@ -167,7 +166,7 @@ export default class StationController {
       res.sendStatus(200);
     } catch (e) {
       const ER_ROW_IS_REFERENCED_2 = "ER_ROW_IS_REFERENCED_2";
-      if (e.original.code === ER_ROW_IS_REFERENCED_2) {
+      if (e.original && e.original.code === ER_ROW_IS_REFERENCED_2) {
         res.sendStatus(400);
       } else {
         next(e);

@@ -23,8 +23,8 @@ import { User } from "./User";
 import isEmpty from "../utils/isEmpty";
 
 @Scopes(() => ({
-  accessibleBy: function (ability, action = 'read') {
-    const conditions = toSequelizeQuery(ability, 'UserTrain');
+  accessibleBy: (ability, action = 'read') => {
+    const conditions = toSequelizeQuery(ability, 'UserTrain', action);
     const includeConditions = !isEmpty(conditions);
     return {
       include: [
@@ -46,7 +46,7 @@ import isEmpty from "../utils/isEmpty";
           include: [Rank, PoliceDepartment]
         }
       ]
-    }
+    };
   }
 }))
 

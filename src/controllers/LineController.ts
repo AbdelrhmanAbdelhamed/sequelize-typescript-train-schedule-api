@@ -4,9 +4,11 @@ import { BasePath, Post, Get, Patch, Delete, Use } from 'decorate-express';
 import { Line } from "../models/Line";
 import { Station } from '../models/Station';
 import validateUser from '../middlewares/ValidateUser';
-import { literal, fn, col } from 'sequelize';
+import { literal, fn, col, Transaction } from 'sequelize';
 import { User } from '../models/User';
 import { Train } from '../models/Train';
+import { sequelize } from '../sequelize';
+import { LineStationTrain } from '../models/LineStationTrain';
 
 @BasePath('/api/lines')
 export default class LineController {
@@ -23,7 +25,7 @@ export default class LineController {
       res.status(201).json(line);
     } catch (e) {
       const ER_DUP_ENTRY = "ER_DUP_ENTRY";
-      if (e.original.code === ER_DUP_ENTRY) {
+      if (e.original && e.original.code === ER_DUP_ENTRY) {
         res.sendStatus(409);
       } else {
         next(e);
@@ -123,14 +125,46 @@ export default class LineController {
 
   @Delete('/:id')
   async delete(req: Request, res: Response, next: NextFunction) {
+    const transaction: Transaction = await sequelize.transaction();
     try {
+      const trainIds: any[] = await LineStationTrain.findAll({
+        attributes: [[literal('DISTINCT `train_id`'), 'id']],
+        where: {
+          lineId: req.params.id
+        },
+        transaction
+      }).map(train => train.id);
+
+      for (const trainId of trainIds) {
+        const lineTrainStations: any = await LineStationTrain.findAll({
+          where: {
+            trainId
+          },
+          transaction,
+          group: [col('trainId'), col('lineId')]
+        });
+
+        if (lineTrainStations.length <= 1) {
+          await Train.destroy({
+            where: {
+              id: trainId
+            },
+            transaction
+          });
+        }
+      }
+
       await Line.destroy({
         where: {
           id: req.params.id
-        }
+        },
+        transaction
       });
-      res.sendStatus(200);
+
+      await transaction.commit();
+      res.json(trainIds);
     } catch (e) {
+      await transaction.rollback();
       next(e);
     }
   }
