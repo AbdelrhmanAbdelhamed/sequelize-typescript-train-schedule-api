@@ -431,8 +431,8 @@ export default class TrainController {
           through: { where: { lineId: req.params.lineId } }
         }],
         order: [
-          [literal('`lineStations.LineStationTrain.departureTime`'), 'ASC'],
           [literal('`lineStations.LineStationTrain.arrivalTime`'), 'ASC'],
+          [literal('`lineStations.LineStationTrain.departureTime`'), 'ASC'],
           [literal('`lineStations.stationOrder`'), 'ASC']
         ]
       });
