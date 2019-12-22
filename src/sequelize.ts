@@ -21,7 +21,7 @@ export const sequelize: Sequelize &
     idle: 10000
   },
   // tslint:disable-next-line: no-console
-  logging: false,
+  logging: process.env.ENV !== 'production' ? console.log: false,
   models: [__dirname + "/models"]
 });
 
