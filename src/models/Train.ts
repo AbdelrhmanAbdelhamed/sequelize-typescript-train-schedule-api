@@ -26,7 +26,6 @@ import isEmpty from "../utils/isEmpty";
     const includeConditions = !isEmpty(conditions);
     return {
       include: [
-        Line,
         {
           model: User,
           required: includeConditions,
