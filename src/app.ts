@@ -35,10 +35,10 @@ app.use(helmet({
 }));
 
 // middleware for parsing application/x-www-form-urlencoded
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.urlencoded({ extended: false, limit: '50mb'}));
 
 // middleware for json body parsing
-app.use(bodyParser.json());
+app.use(bodyParser.json({limit: '50mb'}));
 
 // register routes
 registerRoutes(app, new StationController());
