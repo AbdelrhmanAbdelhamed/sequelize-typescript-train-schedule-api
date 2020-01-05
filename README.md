@@ -5,7 +5,12 @@
 npm install
 ```
 
-## Start server
+## Build Production
+```
+npm run build
+```
+
+## Start Production server
 ```
 npm start
 ```
