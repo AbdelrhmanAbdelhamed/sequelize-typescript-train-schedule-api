@@ -224,10 +224,10 @@ export default class TrainController {
             ];
           }).map(Promise.all, Promise));
         }));
-        const trainRunsWithStations: any = trainRuns.map((trainRun, index) => {
-          const fromStation = policePeopleStations[index][0][0];
-          const toStation = policePeopleStations[index][0][1];
-          const policePeopleWithStations: any = trainRun.policePeople!.map(policePerson => {
+        const trainRunsWithStations: any = trainRuns.map((trainRun, trainRunIndex) => {
+          const policePeopleWithStations: any = trainRun.policePeople!.map((policePerson, policePersonIndex) => {
+            const [fromStation] = policePeopleStations[trainRunIndex][policePersonIndex];
+            const [ ,toStation] = policePeopleStations[trainRunIndex][policePersonIndex];
             return {
               createdAt: policePerson.createdAt,
               id: policePerson.id,
@@ -309,10 +309,10 @@ export default class TrainController {
             ];
           }).map(Promise.all, Promise));
         }));
-        const trainRunsWithStations: any = trainRuns.map((trainRun, index) => {
-          const fromStation = policePeopleStations[index][0][0];
-          const toStation = policePeopleStations[index][0][1];
-          const policePeopleWithStations: any = trainRun.policePeople!.map(policePerson => {
+        const trainRunsWithStations: any = trainRuns.map((trainRun, trainRunIndex) => {
+          const policePeopleWithStations: any = trainRun.policePeople!.map((policePerson, policePersonIndex) => {
+            const [fromStation] = policePeopleStations[trainRunIndex][policePersonIndex];
+            const [ ,toStation] = policePeopleStations[trainRunIndex][policePersonIndex];
             return {
               createdAt: policePerson.createdAt,
               id: policePerson.id,
