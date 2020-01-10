@@ -226,8 +226,7 @@ export default class TrainController {
         }));
         const trainRunsWithStations: any = trainRuns.map((trainRun, trainRunIndex) => {
           const policePeopleWithStations: any = trainRun.policePeople!.map((policePerson, policePersonIndex) => {
-            const [fromStation] = policePeopleStations[trainRunIndex][policePersonIndex];
-            const [ ,toStation] = policePeopleStations[trainRunIndex][policePersonIndex];
+            const [fromStation, toStation] = policePeopleStations[trainRunIndex][policePersonIndex];
             return {
               createdAt: policePerson.createdAt,
               id: policePerson.id,
