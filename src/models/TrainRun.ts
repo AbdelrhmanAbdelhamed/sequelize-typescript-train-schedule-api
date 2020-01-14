@@ -57,16 +57,13 @@ export class TrainRun extends Model<TrainRun> {
 
   @AllowNull(false)
   @Column({
-    type: DataTypes.DATEONLY,
-    unique: "train_run_date"
+    type: DataTypes.DATEONLY
   })
   day!: Date;
 
   @ForeignKey(() => Train)
   @AllowNull(false)
-  @Column({
-    unique: "train_run_date"
-  })
+  @Column
   trainId!: number;
 
   @BelongsTo(() => Train)
