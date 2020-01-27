@@ -18,7 +18,7 @@ import { sequelize, TrainRunRevision } from "../sequelize";
 
 import { rulesToFields } from "@casl/ability/extra";
 import isEmpty from "../utils/isEmpty";
-import mergeObjectsKeyIntoArray from "../utils/mergeObjectsKeyIntoArray";
+import mergeObjectsKeysIntoArray from "../utils/mergeObjectsKeysIntoArray";
 import joinObject from "../utils/joinObject";
 
 @BasePath("/api/trains")
@@ -645,7 +645,7 @@ export default class TrainController {
           type: QueryTypes.SELECT
         }
       );
-      res.json(mergeObjectsKeyIntoArray(trains, "lines"));
+      res.json(mergeObjectsKeysIntoArray(trains, ["lines", "users"]));
     } catch (e) {
       next(e);
     }
@@ -692,7 +692,7 @@ export default class TrainController {
             type: QueryTypes.SELECT
           }
         );
-      res.json(mergeObjectsKeyIntoArray(trains, "lines"));
+      res.json(mergeObjectsKeysIntoArray(trains, ["lines", "users"]));
     } catch (e) {
       next(e);
     }
