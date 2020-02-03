@@ -445,15 +445,7 @@ export default class TrainController {
         \`stations\` AS \`Station\` ON \`Station\`.id = \`lineStations\`.\`station_id\`
     WHERE
         \`Train\`.\`id\` = $id
-    ORDER BY CASE
-        WHEN
-            COALESCE(\`LineStationTrain.departureTime\`,
-                    '1753-01-01') < COALESCE(\`LineStationTrain.arrivalTime\`,
-                    '1753-01-01')
-        THEN
-            \`LineStationTrain.arrivalTime\`
-        ELSE \`LineStationTrain.departureTime\`
-    END ASC;
+    ORDER BY \`LineStation.stationOrder\` ASC;
       `,
         {
           bind: {
