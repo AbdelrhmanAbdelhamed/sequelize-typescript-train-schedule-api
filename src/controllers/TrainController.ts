@@ -211,6 +211,15 @@ export default class TrainController {
     }
   }
 
+  @Get("/")
+  async get(req: Request & { ability: any, user: User }, res: Response, next: NextFunction) {
+    if (req.query.departureStation && req.query.arrivalStation) {
+      this.getByStations(req, res, next);
+    } else {
+      this.getAll(req, res, next);
+    }
+  }
+
   @Get("/runs")
   async getAllTrainRuns(req: Request & { ability: any, User: any }, res: Response, next: NextFunction) {
     try {
@@ -279,15 +288,6 @@ export default class TrainController {
 
     } catch (e) {
       next(e);
-    }
-  }
-
-  @Get("/")
-  async get(req: Request & { ability: any, user: User }, res: Response, next: NextFunction) {
-    if (req.query.departureStation && req.query.arrivalStation) {
-      this.getByStations(req, res, next);
-    } else {
-      this.getAll(req, res, next);
     }
   }
 

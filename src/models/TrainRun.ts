@@ -11,7 +11,7 @@ import {
   AllowNull,
   Scopes
 } from "sequelize-typescript";
-import { DataTypes } from "sequelize";
+import { DataTypes, col } from "sequelize";
 
 import { Train } from "./Train";
 import { TrainRunPolicePerson } from "./TrainRunPolicePerson";
@@ -45,7 +45,8 @@ import isEmpty from "../utils/isEmpty";
           model: PolicePerson,
           include: [Rank, PoliceDepartment]
         }
-      ]
+      ],
+      order: [[col('day'), 'DESC']]
     };
   }
 }))
