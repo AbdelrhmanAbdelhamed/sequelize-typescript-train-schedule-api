@@ -9,7 +9,6 @@ import { PoliceDepartment } from "../models/PoliceDepartment";
 import { Station } from "../models/Station";
 import { LineStation } from "../models/LineStation";
 import { LineStationTrain } from "../models/LineStationTrain";
-import { Line } from "../models/Line";
 import { QueryTypes, col, Transaction } from "sequelize";
 import validateUser from "../middlewares/ValidateUser";
 import { User } from "../models/User";
@@ -407,12 +406,7 @@ export default class TrainController {
   @Get("/:id")
   async getById(req: Request, res: Response, next: NextFunction) {
     try {
-      const train = await Train.findByPk(req.params.id, {
-        include: [
-          Line,
-          LineStation
-        ]
-      });
+      const train = await Train.findByPk(req.params.id);
       res.json(train);
 
     } catch (e) {
@@ -426,12 +420,15 @@ export default class TrainController {
 
     const stations = await sequelize.query(
       `
-        SELECT 
+        SELECT
+        \`Train\`.\`id\` AS \`train.id\`,
+        \`Train\`.\`number\` AS \`train.number\`,
         \`lineStations\`.\`station_order\` AS \`LineStation.stationOrder\`,
         \`lineStations->LineStationTrain\`.\`arrival_time\` AS \`LineStationTrain.arrivalTime\`,
         \`lineStations->LineStationTrain\`.\`departure_time\` AS \`LineStationTrain.departureTime\`,
         \`lineStations->LineStationTrain\`.\`line_station_id\` AS \`LineStationTrain.line_station_id\`,
         \`lineStations->LineStationTrain\`.\`train_id\` AS \`LineStationTrain.train_id\`,
+        \`Station\`.\`id\`,
         \`Station\`.\`name\`
     FROM
         \`trains\` AS \`Train\`
@@ -458,8 +455,8 @@ export default class TrainController {
           raw: true,
           type: QueryTypes.SELECT
         }
-      )
-      res.json(stations);
+      );
+    res.json(stations);
     } catch (e) {
       next(e);
     }
@@ -602,7 +599,7 @@ export default class TrainController {
             LEFT OUTER JOIN
         (line_station_trains AS \`lines->LineStationTrain\`
         INNER JOIN \`lines\` AS \`lines\` ON \`lines\`.id = \`lines->LineStationTrain\`.line_id
-            AND \`lines\`.id IN (SELECT 
+            AND \`lines\`.id IN (SELECT
                 targetLines.id
             FROM
                 \`lines\` AS targetLines
