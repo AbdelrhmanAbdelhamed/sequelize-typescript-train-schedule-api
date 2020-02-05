@@ -9,7 +9,8 @@ import {
   BelongsTo,
   BelongsToMany,
   AllowNull,
-  Scopes
+  Scopes,
+  Index
 } from "sequelize-typescript";
 import { DataTypes, col } from "sequelize";
 
@@ -57,6 +58,9 @@ import isEmpty from "../utils/isEmpty";
 export class TrainRun extends Model<TrainRun> {
 
   @AllowNull(false)
+  @Index({
+    order: 'DESC',
+  })
   @Column({
     type: DataTypes.DATEONLY
   })
