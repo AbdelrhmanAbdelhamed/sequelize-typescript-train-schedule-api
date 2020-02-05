@@ -4,11 +4,15 @@ import { BasePath, Post, Get, Patch, Delete, Use } from 'decorate-express';
 import { Line } from "../models/Line";
 import { Station } from '../models/Station';
 import validateUser from '../middlewares/ValidateUser';
-import { literal, fn, col, Transaction } from 'sequelize';
+import { literal, fn, col, Transaction, QueryTypes } from 'sequelize';
 import { User } from '../models/User';
 import { Train } from '../models/Train';
 import { sequelize } from '../sequelize';
 import { LineStationTrain } from '../models/LineStationTrain';
+import mergeObjectsKeysIntoArray from '../utils/mergeObjectsKeysIntoArray';
+import { rulesToFields } from '@casl/ability/extra';
+import isEmpty from '../utils/isEmpty';
+import joinObject from '../utils/joinObject';
 
 @BasePath('/api/lines')
 export default class LineController {
@@ -77,7 +81,7 @@ export default class LineController {
         }],
         order: [[literal('`lines.LineStation.stationOrder`'), 'ASC']]
       });
-      if(stations.length <= 0) {
+      if (stations.length <= 0) {
         const line = await Line.findByPk(req.params.id);
         stations = {line};
       }
@@ -90,20 +94,50 @@ export default class LineController {
   @Get('/:id/trains')
   async getTrains(req: Request & { ability: any, user: User }, res: Response, next: NextFunction) {
     try {
-      let trains = await Train.scope({ method: ['accessibleBy', req.ability] }).findAll({
-        include: [
-          {
-            model: Line,
-            required: true,
-            through: { where: { lineId: req.params.id } }
+      const conditions = rulesToFields(req.ability, "read", "UserTrain");
+      const includeConditions = !isEmpty(conditions);
+      const userTrainsJoinType = includeConditions ? 'INNER JOIN' : 'LEFT OUTER JOIN';
+      const userJoinConditions = `users.id = \`users->UserTrain\`.user_id
+                            ${
+                              includeConditions
+                              ?
+                              'AND (`users->UserTrain`.' + joinObject(conditions, " = ", " OR ", "underscore") + ')'
+                              : ''
+                            }`;
+
+      const trains = await sequelize.query(
+        `
+        SELECT DISTINCT
+        \`Train\`.\`id\`,
+        \`lines\`.\`id\` AS \`lines.id\`,
+        \`Train\`.\`number\`,
+        \`users\`.\`id\` AS \`users.id\`,
+        \`users->UserTrain\`.\`user_id\` AS \`users.UserTrain.userId\`,
+        \`lines\`.\`name\` AS \`lines.name\`
+    FROM
+        \`trains\` AS \`Train\`
+        ${userTrainsJoinType}
+        (\`user_trains\` AS \`users->UserTrain\`
+        INNER JOIN \`users\` AS \`users\` ON
+        ${userJoinConditions}) ON \`Train\`.\`id\` = \`users->UserTrain\`.\`train_id\`
+            LEFT OUTER JOIN
+        (\`line_station_trains\` AS \`lines->LineStationTrain\`
+        INNER JOIN \`lines\` AS \`lines\` ON
+         \`lines\`.\`id\` = \`lines->LineStationTrain\`.\`line_id\`) ON \`Train\`.\`id\` = \`lines->LineStationTrain\`.\`train_id\`
+    WHERE
+        \`lines\`.\`id\` = $line_id
+      `,{
+            bind: {
+              line_id: req.params.id
+            },
+            model: Train,
+            mapToModel: true,
+            nest: true,
+            raw: true,
+            type: QueryTypes.SELECT
           }
-        ]
-      });
-      if(trains.length <= 0) {
-        const line = await Line.findByPk(req.params.id);
-        trains = {line};
-      }
-      res.json(trains);
+        );
+      res.json(mergeObjectsKeysIntoArray(trains, ["lines", "users"]));
     } catch (e) {
       next(e);
     }

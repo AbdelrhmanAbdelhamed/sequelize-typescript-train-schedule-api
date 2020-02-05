@@ -28,15 +28,19 @@ import isEmpty from "../utils/isEmpty";
     const conditions = toSequelizeQuery(ability, 'UserTrain', action);
     const includeConditions = !isEmpty(conditions);
     return {
+      attributes: ['id', 'day'],
       include: [
         {
           model: Train,
+          attributes: ['id', 'number'],
           required: includeConditions,
           include: [
             {
               model: User,
+              attributes: ['id', 'fullName'],
               required: includeConditions,
               through: {
+                attributes: ['userId'],
                 where: conditions
               }
             }
@@ -44,7 +48,20 @@ import isEmpty from "../utils/isEmpty";
         },
         {
           model: PolicePerson,
-          include: [Rank, PoliceDepartment]
+          attributes: ['id', 'name', 'phoneNumber'],
+          through: {
+            attributes: ['fromStationId', 'toStationId']
+          },
+          include: [
+            {
+              model: Rank,
+              attributes: ['id', 'name']
+            },
+            {
+              model: PoliceDepartment,
+              attributes: ['id', 'name']
+            }
+          ]
         }
       ],
       order: [[col('day'), 'DESC']]

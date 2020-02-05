@@ -3,7 +3,7 @@
   "compilerOptions": {
     "rootDir": "./src",
 		"outDir": "./build",
-    "target": "es6",
+    "target": "ES6",
     "module": "commonjs",
     "moduleResolution": "node",
     "experimentalDecorators": true,

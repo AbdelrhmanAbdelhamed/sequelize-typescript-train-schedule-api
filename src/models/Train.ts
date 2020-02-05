@@ -25,16 +25,19 @@ import isEmpty from "../utils/isEmpty";
     const conditions = toSequelizeQuery(ability, 'UserTrain', action);
     const includeConditions = !isEmpty(conditions);
     return {
+      attributes: ['id', 'number'],
       include: [
         {
           model: User,
+          attributes: ['id', 'fullName'],
           required: includeConditions,
           through: {
+            attributes: ['userId'],
             where: conditions
           }
         }
       ]
-      }
+      };
   }
 }))
 

@@ -46,7 +46,10 @@ export default class StationController {
   async getAll(req: Request, res: Response, next: NextFunction) {
     try {
       const stations = await Station.findAll({
-        include: [Line],
+        include: [{
+          model: Line,
+          attributes: ['id', 'name']
+        }],
         order: [[col('`lines.LineStation.station_order`'), 'ASC']]
       });
       res.json(stations);
