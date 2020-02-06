@@ -20,6 +20,8 @@ import isEmpty from "../utils/isEmpty";
 import mergeObjectsKeysIntoArray from "../utils/mergeObjectsKeysIntoArray";
 import joinObject from "../utils/joinObject";
 
+import * as Moment from 'moment';
+
 @BasePath("/api/trains")
 export default class TrainController {
   @Use()
@@ -594,8 +596,10 @@ export default class TrainController {
         \`users->UserTrain\`.user_id AS \`users.UserTrain.userId\`,
         \`departure_stations\`.\`name\` AS \`departureStation.name\`,
         \`departure_line_station_trains\`.\`departure_time\` AS \`departureStation.departureTime\`,
+        \`departure_line_station_trains\`.\`arrival_time\` AS \`departureStation.arrivalTime\`,
         \`arrival_stations\`.\`name\` AS \`arrivalStation.name\`,
-        \`arrival_line_station_trains\`.\`arrival_time\` AS \`arrivalStation.arrivalTime\`
+        \`arrival_line_station_trains\`.\`arrival_time\` AS \`arrivalStation.arrivalTime\`,
+        \`arrival_line_station_trains\`.\`departure_time\` AS \`arrivalStation.departureTime\`
     FROM
         trains AS Train
             LEFT OUTER JOIN
@@ -626,6 +630,7 @@ export default class TrainController {
             OR arrival_line_station_trains.departure_time IS NOT NULL)
             AND departure_line_station.station_order < arrival_line_station.station_order
             AND departure_lines.name = arrival_lines.name
+    ORDER BY COALESCE(departure_line_station_trains.departure_time, departure_line_station_trains.arrival_time) ASC
         `,
         {
           bind: {
@@ -639,7 +644,13 @@ export default class TrainController {
           type: QueryTypes.SELECT
         }
       );
-      res.json(mergeObjectsKeysIntoArray(trains, ["lines", "users"]));
+      const results = mergeObjectsKeysIntoArray(trains, ["lines", "users"]).map((trainsData: any) => {
+        const start = trainsData.departureStation.departureTime ?? trainsData.departureStation.arrivalTime;
+        const end = trainsData.arrivalStation.arrivalTime ?? trainsData.arrivalStation.departureTime;
+        trainsData.crossedNextDay = Moment.utc(end, "HH:mm:ss").isBefore(Moment.utc(start, "HH:mm:ss"));
+        return trainsData;
+      });
+      res.json(results);
     } catch (e) {
       next(e);
     }
