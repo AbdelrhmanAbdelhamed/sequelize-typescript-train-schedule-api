@@ -584,39 +584,31 @@ export default class TrainController {
   private async getByStations(req: Request & { ability: any, user: any }, res: Response, next: NextFunction) {
     try {
       const trains = await sequelize.query(
-        `
-        SELECT DISTINCT
-        \`lines\`.id AS \`lines.id\`,
+      `
+    SELECT DISTINCT
+        \`departure_lines\`.id AS \`lines.id\`,
+      \`departure_lines\`.name AS \`lines.name\`,
         Train.id,
         Train.number,
         users.id AS \`users.id\`,
         \`users->UserTrain\`.user_id AS \`users.UserTrain.userId\`,
-        \`lines\`.name AS \`lines.name\`
+        \`departure_stations\`.\`name\` AS \`departureStation.name\`,
+        \`departure_line_station_trains\`.\`departure_time\` AS \`departureStation.departureTime\`,
+        \`arrival_stations\`.\`name\` AS \`arrivalStation.name\`,
+        \`arrival_line_station_trains\`.\`arrival_time\` AS \`arrivalStation.arrivalTime\`
     FROM
         trains AS Train
             LEFT OUTER JOIN
         (user_trains AS \`users->UserTrain\`
         INNER JOIN users AS \`users\` ON users.id = \`users->UserTrain\`.user_id) ON Train.id = \`users->UserTrain\`.train_id
-            LEFT OUTER JOIN
-        (line_station_trains AS \`lines->LineStationTrain\`
-        INNER JOIN \`lines\` AS \`lines\` ON \`lines\`.id = \`lines->LineStationTrain\`.line_id
-            AND \`lines\`.id IN (SELECT
-                targetLines.id
-            FROM
-                \`lines\` AS targetLines
-            JOIN line_stations AS departure_line_station ON departure_line_station.line_id = targetLines.id
-            JOIN line_stations AS arrival_line_station ON arrival_line_station.line_id = targetLines.id
-            JOIN stations AS departure_stations ON departure_stations.id = departure_line_station.station_id
-            JOIN stations AS arrival_stations ON arrival_stations.id = arrival_line_station.station_id
-            WHERE
-                departure_stations.name = $departureStation
-                    AND arrival_stations.name = $arrivalStation
-                    AND departure_line_station.station_order < arrival_line_station.station_order
-                  )) ON Train.id = \`lines->LineStationTrain\`.train_id
             JOIN
         line_station_trains AS departure_line_station_trains ON departure_line_station_trains.train_id = Train.id
             JOIN
+        \`lines\` AS departure_lines ON departure_lines.id = departure_line_station_trains.line_id
+            JOIN
         line_station_trains arrival_line_station_trains ON arrival_line_station_trains.train_id = Train.id
+            JOIN
+        \`lines\` AS arrival_lines ON arrival_lines.id = arrival_line_station_trains.line_id
             JOIN
         line_stations AS departure_line_station ON departure_line_station.id = departure_line_station_trains.line_station_id
             JOIN
@@ -627,13 +619,13 @@ export default class TrainController {
         stations AS arrival_stations ON arrival_stations.id = arrival_line_station.station_id
     WHERE
         departure_stations.name = $departureStation
-            AND (departure_line_station_trains.is_deprature = 1
-            OR departure_line_station_trains.is_arrival = 1)
             AND arrival_stations.name = $arrivalStation
-            AND (arrival_line_station_trains.is_arrival = 1
-            OR arrival_line_station_trains.is_deprature = 1)
+            AND (departure_line_station_trains.departure_time IS NOT NULL
+            OR departure_line_station_trains.arrival_time IS NOT NULL)
+            AND (arrival_line_station_trains.arrival_time IS NOT NULL
+            OR arrival_line_station_trains.departure_time IS NOT NULL)
             AND departure_line_station.station_order < arrival_line_station.station_order
-            AND \`lines\`.name IS NOT NULL;
+            AND departure_lines.name = arrival_lines.name
         `,
         {
           bind: {
