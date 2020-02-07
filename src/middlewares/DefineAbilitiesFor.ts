@@ -10,17 +10,16 @@ export function defineAbilitiesFor(user: User) {
       allow("read", ["Train", "TrainRun", "Line", "Station"]);
     } else if (user.role!.name === "editor") {
       allow("read", "Station");
-      allow("manage", "TrainRun");
+      allow("manage", "TrainRun", { userId: user.id });
       allow("read", "UserTrain", { userId: user.id });
       allow("read", "Train", {
         users: { $elemMatch: { id: { $eq: user.id } } }
       });
     } else if (user.role!.name === "moderator") {
-      allow(["manage"], ["Train", "TrainRun", "Line", "Station"]);
+      allow("manage", ["Train", "TrainRun", "Line", "Station"]);
     } else if (user.role!.name === "admin") {
       allow("manage", "all");
     }
-
     return new Ability(rules);
   }
   return null;

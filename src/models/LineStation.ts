@@ -12,7 +12,7 @@ import {
 
 import { Line } from "./Line";
 import { Station } from "./Station";
-import { LineStationTrain } from "./LineStationTrain";
+import { LineTrainStation } from "./LineTrainStation";
 import { Train } from "./Train";
 import { DataTypes } from "sequelize";
 
@@ -55,21 +55,21 @@ export class LineStation extends Model<LineStation> {
 
   @BelongsToMany(() => Train, {
     through: {
-      model: () => LineStationTrain,
+      model: () => LineTrainStation,
       unique: false
     },
     foreignKey: 'line_station_id'
   })
-  trains?: Array<Train & { LineStationTrain: LineStationTrain }>;
+  trains?: Array<Train & { LineTrainStation: LineTrainStation }>;
 
   @BelongsToMany(() => Line, {
     through: {
-      model: () => LineStationTrain,
+      model: () => LineTrainStation,
       unique: false
     },
     foreignKey: 'line_station_id'
   })
-  lines?: Array<Line & { LineStationTrain: LineStationTrain }>;
+  lines?: Array<Line & { LineTrainStation: LineTrainStation }>;
 
   @CreatedAt
   @Column({

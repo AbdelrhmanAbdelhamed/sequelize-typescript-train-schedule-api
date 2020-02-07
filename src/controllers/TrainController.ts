@@ -8,7 +8,7 @@ import { Rank } from "../models/Rank";
 import { PoliceDepartment } from "../models/PoliceDepartment";
 import { Station } from "../models/Station";
 import { LineStation } from "../models/LineStation";
-import { LineStationTrain } from "../models/LineStationTrain";
+import { LineTrainStation } from "../models/LineTrainStation";
 import { QueryTypes, col, Transaction } from "sequelize";
 import validateUser from "../middlewares/ValidateUser";
 import { User } from "../models/User";
@@ -38,7 +38,7 @@ export default class TrainController {
         await Promise.all(stations.map(station => {
           return train.$add("lineStation", station.lineStationId, {
             through: {
-              ...station.LineStationTrain
+              ...station.LineTrainStation
             }
           });
         }));
@@ -132,7 +132,7 @@ export default class TrainController {
           await Promise.all(stations.map(station => {
             return train.$add("lineStation", station.lineStationId, {
               through: {
-                ...station.LineStationTrain
+                ...station.LineTrainStation
               }
             });
           }));
@@ -152,7 +152,7 @@ export default class TrainController {
   @Delete("/:id/stations/:lineStationId")
   async deleteLineStation(req: Request, res: Response, next: NextFunction) {
     try {
-      await LineStationTrain.destroy({
+      await LineTrainStation.destroy({
         where: {
           trainId: req.params.id,
           lineStationId: req.params.lineStationId
@@ -167,7 +167,7 @@ export default class TrainController {
   @Put("/:id/stations")
   async updateLineStations(req: Request, res: Response, next: NextFunction) {
     try {
-      await LineStationTrain.bulkCreate(req.body.map(station => station.LineStationTrain), {
+      await LineTrainStation.bulkCreate(req.body.map(station => station.LineTrainStation), {
         updateOnDuplicate: ['departureTime', 'arrivalTime', 'isDeprature', 'isArrival']
       });
       res.sendStatus(200);
@@ -179,7 +179,7 @@ export default class TrainController {
   @Patch("/:id/stations/:lineStationId")
   async updateStation(req: Request, res: Response, next: NextFunction) {
     try {
-      await LineStationTrain.update(req.body, {
+      await LineTrainStation.update(req.body, {
         where: {
           trainId: req.params.id,
           lineStationId: req.params.lineStationId
@@ -239,6 +239,7 @@ export default class TrainController {
       SELECT
         \`TrainRun\`.\`id\`,
         \`TrainRun\`.\`day\`,
+        \`TrainRun\`.\`user_id\`,
         \`train\`.\`id\` AS \`train.id\`,
         \`train\`.\`number\` AS \`train.number\`,
         \`train->users\`.\`id\` AS \`train.users.id\`,
@@ -312,6 +313,7 @@ export default class TrainController {
       SELECT
         \`TrainRun\`.\`id\`,
         \`TrainRun\`.\`day\`,
+        \`TrainRun\`.\`user_id\`,
         \`train\`.\`id\` AS \`train.id\`,
         \`train\`.\`number\` AS \`train.number\`,
         \`train->users\`.\`id\` AS \`train.users.id\`,
@@ -426,21 +428,21 @@ export default class TrainController {
         \`Train\`.\`id\` AS \`train.id\`,
         \`Train\`.\`number\` AS \`train.number\`,
         \`lineStations\`.\`station_order\` AS \`LineStation.stationOrder\`,
-        \`lineStations->LineStationTrain\`.\`id\` AS \`LineStationTrain.id\`,
-        date_format(\`lineStations->LineStationTrain\`.\`arrival_time\`, '%H:%i:%s') AS \`LineStationTrain.arrivalTime\`,
-        date_format(\`lineStations->LineStationTrain\`.\`departure_time\`, '%H:%i:%s') AS \`LineStationTrain.departureTime\`,
-        \`lineStations->LineStationTrain\`.\`line_station_id\` AS \`LineStationTrain.lineStationId\`,
-        \`lineStations->LineStationTrain\`.\`train_id\` AS \`LineStationTrain.trainId\`,
+        \`lineStations->LineTrainStation\`.\`id\` AS \`LineTrainStation.id\`,
+        date_format(\`lineStations->LineTrainStation\`.\`arrival_time\`, '%H:%i:%s') AS \`LineTrainStation.arrivalTime\`,
+        date_format(\`lineStations->LineTrainStation\`.\`departure_time\`, '%H:%i:%s') AS \`LineTrainStation.departureTime\`,
+        \`lineStations->LineTrainStation\`.\`line_station_id\` AS \`LineTrainStation.lineStationId\`,
+        \`lineStations->LineTrainStation\`.\`train_id\` AS \`LineTrainStation.trainId\`,
         \`Station\`.\`id\`,
         \`Station\`.\`name\`
     FROM
         \`trains\` AS \`Train\`
             LEFT OUTER JOIN
-        (\`line_station_trains\` AS \`lineStations->LineStationTrain\`
+        (\`line_train_stations\` AS \`lineStations->LineTrainStation\`
         INNER JOIN \`line_stations\` AS \`lineStations\`
-         ON \`lineStations\`.\`id\` = \`lineStations->LineStationTrain\`.\`line_station_id\`
-            AND \`lineStations->LineStationTrain\`.\`line_id\` = $lineId)
-             ON \`Train\`.\`id\` = \`lineStations->LineStationTrain\`.\`train_id\`
+         ON \`lineStations\`.\`id\` = \`lineStations->LineTrainStation\`.\`line_station_id\`
+            AND \`lineStations->LineTrainStation\`.\`line_id\` = $lineId)
+             ON \`Train\`.\`id\` = \`lineStations->LineTrainStation\`.\`train_id\`
             JOIN
         \`stations\` AS \`Station\` ON \`Station\`.id = \`lineStations\`.\`station_id\`
     WHERE
@@ -493,14 +495,14 @@ export default class TrainController {
             lineStationId: lineStation.id,
             createdAt: lineStation.createdAt,
             updatedAt: lineStation.updatedAt,
-            LineStationTrain: {
-              id: lineStation.LineStationTrain.id,
-              arrivalTime: lineStation.LineStationTrain.arrivalTime,
-              departureTime: lineStation.LineStationTrain.departureTime,
-              isArrival: lineStation.LineStationTrain.isArrival,
-              isDeprature: lineStation.LineStationTrain.isDeprature,
-              createdAt: lineStation.LineStationTrain.createdAt,
-              updatedAt: lineStation.LineStationTrain.updatedAt
+            LineTrainStation: {
+              id: lineStation.LineTrainStation.id,
+              arrivalTime: lineStation.LineTrainStation.arrivalTime,
+              departureTime: lineStation.LineTrainStation.departureTime,
+              isArrival: lineStation.LineTrainStation.isArrival,
+              isDeprature: lineStation.LineTrainStation.isDeprature,
+              createdAt: lineStation.LineTrainStation.createdAt,
+              updatedAt: lineStation.LineTrainStation.updatedAt
             }
           };
         }));
@@ -552,7 +554,7 @@ export default class TrainController {
   @Delete("/:id/lines/:lineId")
   async deleteLine(req: Request, res: Response, next: NextFunction) {
     try {
-      const lineTrainStations: any = await LineStationTrain.findAll({
+      const lineTrainStations: any = await LineTrainStation.findAll({
         where: {
           trainId: req.params.id
         },
@@ -566,7 +568,7 @@ export default class TrainController {
           }
         });
       }
-      await LineStationTrain.destroy({
+      await LineTrainStation.destroy({
         where: {
           trainId: req.params.id,
           lineId: req.params.lineId
@@ -595,28 +597,28 @@ export default class TrainController {
         users.id AS \`users.id\`,
         \`users->UserTrain\`.user_id AS \`users.UserTrain.userId\`,
         \`departure_stations\`.\`name\` AS \`departureStation.name\`,
-        \`departure_line_station_trains\`.\`departure_time\` AS \`departureStation.departureTime\`,
-        \`departure_line_station_trains\`.\`arrival_time\` AS \`departureStation.arrivalTime\`,
+        \`departure_line_train_stations\`.\`departure_time\` AS \`departureStation.departureTime\`,
+        \`departure_line_train_stations\`.\`arrival_time\` AS \`departureStation.arrivalTime\`,
         \`arrival_stations\`.\`name\` AS \`arrivalStation.name\`,
-        \`arrival_line_station_trains\`.\`arrival_time\` AS \`arrivalStation.arrivalTime\`,
-        \`arrival_line_station_trains\`.\`departure_time\` AS \`arrivalStation.departureTime\`
+        \`arrival_line_train_stations\`.\`arrival_time\` AS \`arrivalStation.arrivalTime\`,
+        \`arrival_line_train_stations\`.\`departure_time\` AS \`arrivalStation.departureTime\`
     FROM
         trains AS Train
             LEFT OUTER JOIN
         (user_trains AS \`users->UserTrain\`
         INNER JOIN users AS \`users\` ON users.id = \`users->UserTrain\`.user_id) ON Train.id = \`users->UserTrain\`.train_id
             JOIN
-        line_station_trains AS departure_line_station_trains ON departure_line_station_trains.train_id = Train.id
+        line_train_stations AS departure_line_train_stations ON departure_line_train_stations.train_id = Train.id
             JOIN
-        \`lines\` AS departure_lines ON departure_lines.id = departure_line_station_trains.line_id
+        \`lines\` AS departure_lines ON departure_lines.id = departure_line_train_stations.line_id
             JOIN
-        line_station_trains arrival_line_station_trains ON arrival_line_station_trains.train_id = Train.id
+        line_train_stations arrival_line_train_stations ON arrival_line_train_stations.train_id = Train.id
             JOIN
-        \`lines\` AS arrival_lines ON arrival_lines.id = arrival_line_station_trains.line_id
+        \`lines\` AS arrival_lines ON arrival_lines.id = arrival_line_train_stations.line_id
             JOIN
-        line_stations AS departure_line_station ON departure_line_station.id = departure_line_station_trains.line_station_id
+        line_stations AS departure_line_station ON departure_line_station.id = departure_line_train_stations.line_station_id
             JOIN
-        line_stations AS arrival_line_station ON arrival_line_station.id = arrival_line_station_trains.line_station_id
+        line_stations AS arrival_line_station ON arrival_line_station.id = arrival_line_train_stations.line_station_id
             JOIN
         stations AS departure_stations ON departure_stations.id = departure_line_station.station_id
             JOIN
@@ -624,13 +626,13 @@ export default class TrainController {
     WHERE
         departure_stations.name = $departureStation
             AND arrival_stations.name = $arrivalStation
-            AND (departure_line_station_trains.departure_time IS NOT NULL
-            OR departure_line_station_trains.arrival_time IS NOT NULL)
-            AND (arrival_line_station_trains.arrival_time IS NOT NULL
-            OR arrival_line_station_trains.departure_time IS NOT NULL)
+            AND (departure_line_train_stations.departure_time IS NOT NULL
+                OR departure_line_train_stations.arrival_time IS NOT NULL)
+            AND (arrival_line_train_stations.arrival_time IS NOT NULL
+                OR arrival_line_train_stations.departure_time IS NOT NULL)
             AND departure_line_station.station_order < arrival_line_station.station_order
             AND departure_lines.name = arrival_lines.name
-    ORDER BY COALESCE(departure_line_station_trains.departure_time, departure_line_station_trains.arrival_time) ASC
+    ORDER BY COALESCE(departure_line_train_stations.departure_time, departure_line_train_stations.arrival_time) ASC
         `,
         {
           bind: {
@@ -685,9 +687,9 @@ export default class TrainController {
         INNER JOIN \`users\` AS \`users\` ON ${userJoinConditions})
           ON \`Train\`.\`id\` = \`users->UserTrain\`.\`train_id\`
         LEFT OUTER JOIN
-            (\`line_station_trains\` AS \`lines->LineStationTrain\`
-        INNER JOIN \`lines\` AS \`lines\` ON \`lines\`.\`id\` = \`lines->LineStationTrain\`.\`line_id\`)
-          ON \`Train\`.\`id\` = \`lines->LineStationTrain\`.\`train_id\`;
+            (\`line_train_stations\` AS \`lines->LineTrainStation\`
+        INNER JOIN \`lines\` AS \`lines\` ON \`lines\`.\`id\` = \`lines->LineTrainStation\`.\`line_id\`)
+          ON \`Train\`.\`id\` = \`lines->LineTrainStation\`.\`train_id\`;
 
         `,
           {

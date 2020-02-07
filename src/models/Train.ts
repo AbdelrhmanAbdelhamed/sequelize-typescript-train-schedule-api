@@ -13,7 +13,7 @@ import {
 
 import { TrainRun } from "./TrainRun";
 import { LineStation } from "./LineStation";
-import { LineStationTrain } from "./LineStationTrain";
+import { LineTrainStation } from "./LineTrainStation";
 import { Line } from "./Line";
 import { User } from "./User";
 import { UserTrain } from "./UserTrain";
@@ -55,20 +55,20 @@ export class Train extends Model<Train> {
 
   @BelongsToMany(() => LineStation, {
     through: {
-      model: () => LineStationTrain,
+      model: () => LineTrainStation,
       unique: false
     }
   })
-  lineStations?: Array<LineStation & { LineStationTrain: LineStationTrain }>;
+  lineStations?: Array<LineStation & { LineTrainStation: LineTrainStation }>;
 
   @BelongsToMany(() => Line, {
     through: {
-      model: () => LineStationTrain,
+      model: () => LineTrainStation,
       unique: false
     },
     foreignKey: 'train_id'
   })
-  lines?: Array<Line & { LineStationTrain: LineStationTrain }>;
+  lines?: Array<Line & { LineTrainStation: LineTrainStation }>;
 
   @BelongsToMany(() => User, () => UserTrain)
   users?: Array<User & { userTrain: UserTrain }>;

@@ -8,7 +8,7 @@ import { literal, fn, col, Transaction, QueryTypes } from 'sequelize';
 import { User } from '../models/User';
 import { Train } from '../models/Train';
 import { sequelize } from '../sequelize';
-import { LineStationTrain } from '../models/LineStationTrain';
+import { LineTrainStation } from '../models/LineTrainStation';
 import mergeObjectsKeysIntoArray from '../utils/mergeObjectsKeysIntoArray';
 import { rulesToFields } from '@casl/ability/extra';
 import isEmpty from '../utils/isEmpty';
@@ -121,9 +121,9 @@ export default class LineController {
         INNER JOIN \`users\` AS \`users\` ON
         ${userJoinConditions}) ON \`Train\`.\`id\` = \`users->UserTrain\`.\`train_id\`
             LEFT OUTER JOIN
-        (\`line_station_trains\` AS \`lines->LineStationTrain\`
+        (\`line_train_stations\` AS \`lines->LineTrainStation\`
         INNER JOIN \`lines\` AS \`lines\` ON
-         \`lines\`.\`id\` = \`lines->LineStationTrain\`.\`line_id\`) ON \`Train\`.\`id\` = \`lines->LineStationTrain\`.\`train_id\`
+         \`lines\`.\`id\` = \`lines->LineTrainStation\`.\`line_id\`) ON \`Train\`.\`id\` = \`lines->LineTrainStation\`.\`train_id\`
     WHERE
         \`lines\`.\`id\` = $line_id
       `,{
@@ -161,7 +161,7 @@ export default class LineController {
   async delete(req: Request, res: Response, next: NextFunction) {
     const transaction: Transaction = await sequelize.transaction();
     try {
-      const trainIds: any[] = await LineStationTrain.findAll({
+      const trainIds: any[] = await LineTrainStation.findAll({
         attributes: [[literal('DISTINCT `train_id`'), 'id']],
         where: {
           lineId: req.params.id
@@ -170,7 +170,7 @@ export default class LineController {
       }).map(train => train.id);
 
       for (const trainId of trainIds) {
-        const lineTrainStations: any = await LineStationTrain.findAll({
+        const lineTrainStations: any = await LineTrainStation.findAll({
           where: {
             trainId
           },

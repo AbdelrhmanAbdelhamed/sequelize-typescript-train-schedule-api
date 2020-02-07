@@ -12,7 +12,7 @@ import {
 import { Station } from "./Station";
 import { LineStation } from "./LineStation";
 import { Train } from "./Train";
-import { LineStationTrain } from "./LineStationTrain";
+import { LineTrainStation } from "./LineTrainStation";
 @Table({
   underscored: true
 })
@@ -33,12 +33,12 @@ export class Line extends Model<Line> {
 
   @BelongsToMany(() => Train, {
     through: {
-      model: () => LineStationTrain,
+      model: () => LineTrainStation,
       unique: false
     },
     foreignKey: 'line_id'
   })
-  trains?: Array<Train & {LineStationTrain: LineStationTrain}>;
+  trains?: Array<Train & {LineTrainStation: LineTrainStation}>;
 
   @CreatedAt
   @Column({

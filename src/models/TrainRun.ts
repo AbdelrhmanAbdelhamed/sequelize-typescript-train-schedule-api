@@ -91,6 +91,14 @@ export class TrainRun extends Model<TrainRun> {
   @BelongsTo(() => Train)
   train?: Train;
 
+  @ForeignKey(() => User)
+  @AllowNull(false)
+  @Column
+  userId!: number;
+
+  @BelongsTo(() => User)
+  user!: User;
+
   @BelongsToMany(() => PolicePerson, () => TrainRunPolicePerson)
   policePeople?: Array<PolicePerson & { TrainRunPolicePerson: TrainRunPolicePerson }>;
 

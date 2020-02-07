@@ -17,7 +17,7 @@ import { Line } from "./Line";
 @Table({
   underscored: true
 })
-export class LineStationTrain extends Model<LineStationTrain> {
+export class LineTrainStation extends Model<LineTrainStation> {
 
   @Column({
     type: DataTypes.INTEGER,
