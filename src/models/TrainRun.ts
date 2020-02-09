@@ -4,13 +4,13 @@ import {
   Model,
   Table,
   UpdatedAt,
-  Sequelize,
   ForeignKey,
   BelongsTo,
   BelongsToMany,
   AllowNull,
   Scopes,
-  Index
+  Index,
+  DeletedAt
 } from "sequelize-typescript";
 import { DataTypes, col } from "sequelize";
 
@@ -70,7 +70,9 @@ import isEmpty from "../utils/isEmpty";
 }))
 
 @Table({
-  underscored: true
+  underscored: true,
+  timestamps: true,
+  paranoid: true
 })
 export class TrainRun extends Model<TrainRun> {
 
@@ -103,15 +105,12 @@ export class TrainRun extends Model<TrainRun> {
   policePeople?: Array<PolicePerson & { TrainRunPolicePerson: TrainRunPolicePerson }>;
 
   @CreatedAt
-  @Column({
-    defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
-  })
   createdAt?: Date;
 
   @UpdatedAt
-  @Column({
-    defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
-  })
   updatedAt?: Date;
+
+  @DeletedAt
+  deletedAt?: Date;
 
 }
