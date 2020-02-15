@@ -369,7 +369,14 @@ export default class TrainController {
         raw: true,
         type: QueryTypes.SELECT
       });
-      res.json(mergeObjectsKeysIntoArray(trainRuns, ["policePeople"]));
+      if (trainRuns && trainRuns.length > 0) {
+        res.json(mergeObjectsKeysIntoArray(trainRuns, ["policePeople"]));
+      } else {
+        const train = await Train.findByPk(req.params.id);
+        if (train) {
+          res.json({ train });
+        }
+      }
     } catch (e) {
       next(e);
     }
@@ -380,7 +387,7 @@ export default class TrainController {
       try {
         const trainRunRevisions = await sequelize.query(
           `
-          SELECT 
+          SELECT
             trains.id AS 'train.id',
             trains.number AS 'train.number',
             train_run_revisions.revision_id AS 'revisionId',
