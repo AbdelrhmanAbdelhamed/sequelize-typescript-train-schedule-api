@@ -251,8 +251,12 @@ export default class TrainController {
         \`policePeople->TrainRunPolicePerson\`.\`to_station_id\` AS \`policePeople.TrainRunPolicePerson.toStationId\`,
         \`policePeople->TrainRunPolicePerson->fromStation\`.\`id\` AS \`policePeople.TrainRunPolicePerson.fromStation.id\`,
         \`policePeople->TrainRunPolicePerson->fromStation\`.\`name\` AS \`policePeople.TrainRunPolicePerson.fromStation.name\`,
+        from_line_train_stations.departure_time AS \`policePeople.TrainRunPolicePerson.fromStation.LineTrainStation.departureTime\`,
+        from_line_train_stations.arrival_time AS \`policePeople.TrainRunPolicePerson.fromStation.LineTrainStation.arrivalTime\`,
         \`policePeople->TrainRunPolicePerson->toStation\`.\`id\` AS \`policePeople.TrainRunPolicePerson.toStation.id\`,
         \`policePeople->TrainRunPolicePerson->toStation\`.\`name\` AS \`policePeople.TrainRunPolicePerson.toStation.name\`,
+        to_line_train_stations.departure_time AS \`policePeople.TrainRunPolicePerson.toStation.LineTrainStation.departureTime\`,
+        to_line_train_stations.arrival_time AS \`policePeople.TrainRunPolicePerson.toStation.LineTrainStation.arrivalTime\`,
         \`policePeople->rank\`.\`id\` AS \`policePeople.rank.id\`,
         \`policePeople->rank\`.\`name\` AS \`policePeople.rank.name\`,
         \`policePeople->policeDepartment\`.\`id\` AS \`policePeople.policeDepartment.id\`,
@@ -276,13 +280,28 @@ export default class TrainController {
             LEFT OUTER JOIN
         \`stations\` AS \`policePeople->TrainRunPolicePerson->toStation\` ON
         \`policePeople->TrainRunPolicePerson->toStation\`.\`id\` = \`policePeople->TrainRunPolicePerson\`.\`to_station_id\`
+        LEFT OUTER JOIN
+        line_stations AS from_line_stations ON from_line_stations.station_id = \`policePeople->TrainRunPolicePerson\`.\`from_station_id\`
+            LEFT OUTER JOIN
+        line_train_stations AS from_line_train_stations ON from_line_train_stations.line_station_id = from_line_stations.id
+            AND from_line_train_stations.train_id = \`train\`.\`id\`
+            LEFT OUTER JOIN
+        line_stations AS to_line_stations ON to_line_stations.station_id = \`policePeople->TrainRunPolicePerson\`.\`to_station_id\`
+            LEFT OUTER JOIN
+        line_train_stations AS to_line_train_stations ON to_line_train_stations.line_station_id = to_line_stations.id
+            AND to_line_train_stations.train_id = \`train\`.\`id\`
             LEFT OUTER JOIN
         \`ranks\` AS \`policePeople->rank\` ON \`policePeople\`.\`rank_id\` = \`policePeople->rank\`.\`id\`
             LEFT OUTER JOIN
         \`police_departments\` AS \`policePeople->policeDepartment\` ON
         \`policePeople\`.\`police_department_id\` = \`policePeople->policeDepartment\`.\`id\`
         WHERE
-       \`TrainRun\`.\`deleted_at\` IS NULL;
+       \`TrainRun\`.\`deleted_at\` IS NULL
+       AND from_line_train_stations.line_id = to_line_train_stations.line_id
+       AND (from_line_train_stations.departure_time IS NOT NULL
+        OR from_line_train_stations.arrival_time IS NOT NULL)
+        AND (to_line_train_stations.arrival_time IS NOT NULL
+        OR to_line_train_stations.departure_time IS NOT NULL);
     `, {
         model: TrainRun,
         mapToModel: true,
@@ -326,8 +345,12 @@ export default class TrainController {
         \`policePeople->TrainRunPolicePerson\`.\`to_station_id\` AS \`policePeople.TrainRunPolicePerson.toStationId\`,
         \`policePeople->TrainRunPolicePerson->fromStation\`.\`id\` AS \`policePeople.TrainRunPolicePerson.fromStation.id\`,
         \`policePeople->TrainRunPolicePerson->fromStation\`.\`name\` AS \`policePeople.TrainRunPolicePerson.fromStation.name\`,
+        from_line_train_stations.departure_time AS \`policePeople.TrainRunPolicePerson.fromStation.LineTrainStation.departureTime\`,
+        from_line_train_stations.arrival_time AS \`policePeople.TrainRunPolicePerson.fromStation.LineTrainStation.arrivalTime\`,
         \`policePeople->TrainRunPolicePerson->toStation\`.\`id\` AS \`policePeople.TrainRunPolicePerson.toStation.id\`,
         \`policePeople->TrainRunPolicePerson->toStation\`.\`name\` AS \`policePeople.TrainRunPolicePerson.toStation.name\`,
+        to_line_train_stations.departure_time AS \`policePeople.TrainRunPolicePerson.toStation.LineTrainStation.departureTime\`,
+        to_line_train_stations.arrival_time AS \`policePeople.TrainRunPolicePerson.toStation.LineTrainStation.arrivalTime\`,
         \`policePeople->rank\`.\`id\` AS \`policePeople.rank.id\`,
         \`policePeople->rank\`.\`name\` AS \`policePeople.rank.name\`,
         \`policePeople->policeDepartment\`.\`id\` AS \`policePeople.policeDepartment.id\`,
@@ -351,14 +374,29 @@ export default class TrainController {
             LEFT OUTER JOIN
         \`stations\` AS \`policePeople->TrainRunPolicePerson->toStation\` ON
         \`policePeople->TrainRunPolicePerson->toStation\`.\`id\` = \`policePeople->TrainRunPolicePerson\`.\`to_station_id\`
+        LEFT OUTER JOIN
+        line_stations AS from_line_stations ON from_line_stations.station_id = \`policePeople->TrainRunPolicePerson\`.\`from_station_id\`
+            LEFT OUTER JOIN
+        line_train_stations AS from_line_train_stations ON from_line_train_stations.line_station_id = from_line_stations.id
+            AND from_line_train_stations.train_id = \`train\`.\`id\`
+            LEFT OUTER JOIN
+        line_stations AS to_line_stations ON to_line_stations.station_id = \`policePeople->TrainRunPolicePerson\`.\`to_station_id\`
+            LEFT OUTER JOIN
+        line_train_stations AS to_line_train_stations ON to_line_train_stations.line_station_id = to_line_stations.id
+            AND to_line_train_stations.train_id = \`train\`.\`id\`
             LEFT OUTER JOIN
         \`ranks\` AS \`policePeople->rank\` ON \`policePeople\`.\`rank_id\` = \`policePeople->rank\`.\`id\`
             LEFT OUTER JOIN
         \`police_departments\` AS \`policePeople->policeDepartment\` ON
         \`policePeople\`.\`police_department_id\` = \`policePeople->policeDepartment\`.\`id\`
-      WHERE
-        \`TrainRun\`.\`train_id\` = $train_id
-      AND \`TrainRun\`.\`deleted_at\` IS NULL;
+        WHERE
+       \`TrainRun\`.\`train_id\` = $train_id
+       AND \`TrainRun\`.\`deleted_at\` IS NULL
+       AND from_line_train_stations.line_id = to_line_train_stations.line_id
+       AND (from_line_train_stations.departure_time IS NOT NULL
+        OR from_line_train_stations.arrival_time IS NOT NULL)
+        AND (to_line_train_stations.arrival_time IS NOT NULL
+        OR to_line_train_stations.departure_time IS NOT NULL);
     `, {
         bind: {
           train_id: req.params.id,
@@ -546,6 +584,7 @@ export default class TrainController {
             id: stationItem.id,
             name: stationItem.name,
             lineStationId: lineStation.id,
+            lineStationOrder: lineStation.stationOrder,
             createdAt: lineStation.createdAt,
             updatedAt: lineStation.updatedAt,
             LineTrainStation: {
