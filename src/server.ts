@@ -6,6 +6,15 @@ const port = process.env.PORT || 3000;
 
 (async () => {
   await sequelize.sync({force: false});
+  await sequelize.query(`
+  CREATE EVENT IF NOT EXISTS cleaning ON SCHEDULE EVERY 1 MONTH ENABLE
+  DO
+DELETE train_runs, train_run_police_people, train_run_revisions
+FROM train_runs
+LEFT JOIN train_run_police_people ON train_runs.id = train_run_police_people.train_run_id
+LEFT JOIN train_run_revisions ON train_runs.id = train_run_revisions.id
+WHERE train_runs.day < CURDATE() - INTERVAL 1 MONTH;
+`);
 
   createServer(app)
     .listen(
