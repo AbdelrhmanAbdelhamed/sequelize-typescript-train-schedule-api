@@ -109,6 +109,19 @@ export default class UserController {
     }
   }
 
+  @Delete("/:id/trains/:trainId")
+  async deleteTrain(req: Request, res: Response, next: NextFunction) {
+    try {
+      const user: User = await User.findByPk(req.params.id);
+      if (user) {
+        await user.$remove("trains", [req.params.trainId]);
+      }
+      res.sendStatus(200);
+    } catch (e) {
+      next(e);
+    }
+  }
+
   @Get('/')
   async getAll(req: Request, res: Response, next: NextFunction) {
     try {
