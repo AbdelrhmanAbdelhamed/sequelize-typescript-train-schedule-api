@@ -425,49 +425,69 @@ export default class TrainController {
       try {
         const trainRunRevisions = await sequelize.query(
           `
-          SELECT
-            trains.id AS 'train.id',
-            trains.number AS 'train.number',
-            train_run_revisions.revision_id AS 'revisionId',
-            train_run_revisions.revision_valid_from AS 'revisionValidFrom',
-            train_run_revisions.revision_valid_to AS 'revisionValidTo',
-            train_run_revisions.who_dunnit AS 'whoDunnit',
-            train_run_revisions.id,
-            train_run_revisions.day,
-            train_run_revisions.train_id AS 'trainId',
-            train_run_revisions.user_id AS 'userId',
-            train_run_revisions.created_at AS 'createdAt',
-            train_run_revisions.updated_at AS 'updatedAt',
-            train_run_revisions.deleted_at AS 'deletedAt',
-            police_people.id AS 'policePeople.id',
-            police_people.name AS 'policePeople.name',
-            police_people.phone_number AS 'policePeople.phoneNumber',
-            ranks.id AS 'policePeople.rank.id',
-            ranks.name AS 'policePeople.rank.name',
-            police_departments.id AS 'policePeople.policeDepartment.id',
-            police_departments.name AS 'policePeople.policeDepartment.name',
-            train_run_police_people.from_station_id AS 'policePeople.TrainRunPolicePerson.fromStationId',
-            from_stations.id AS 'policePeople.TrainRunPolicePerson.fromStation.id',
-            from_stations.name AS 'policePeople.TrainRunPolicePerson.fromStation.name',
-            train_run_police_people.to_station_id AS 'policePeople.TrainRunPolicePerson.toStationId',
-            to_stations.id AS 'policePeople.TrainRunPolicePerson.toStation.id',
-            to_stations.name AS 'policePeople.TrainRunPolicePerson.toStation.name'
-        FROM
-            train_run_revisions
+      SELECT
+          trains.id AS 'train.id',
+          trains.number AS 'train.number',
+          train_run_revisions.revision_id AS 'revisionId',
+          train_run_revisions.revision_valid_from AS 'revisionValidFrom',
+          train_run_revisions.revision_valid_to AS 'revisionValidTo',
+          train_run_revisions.who_dunnit AS 'whoDunnit',
+          train_run_revisions.id,
+          train_run_revisions.day,
+          train_run_revisions.train_id AS 'trainId',
+          train_run_revisions.user_id AS 'userId',
+          train_run_revisions.created_at AS 'createdAt',
+          train_run_revisions.updated_at AS 'updatedAt',
+          train_run_revisions.deleted_at AS 'deletedAt',
+          police_people.id AS 'policePeople.id',
+          police_people.name AS 'policePeople.name',
+          police_people.phone_number AS 'policePeople.phoneNumber',
+          ranks.id AS 'policePeople.rank.id',
+          ranks.name AS 'policePeople.rank.name',
+          police_departments.id AS 'policePeople.policeDepartment.id',
+          police_departments.name AS 'policePeople.policeDepartment.name',
+          train_run_police_people.from_station_id AS 'policePeople.TrainRunPolicePerson.fromStationId',
+          from_stations.id AS 'policePeople.TrainRunPolicePerson.fromStation.id',
+          from_stations.name AS 'policePeople.TrainRunPolicePerson.fromStation.name',
+          from_line_train_stations.departure_time AS 'policePeople.TrainRunPolicePerson.fromStation.LineTrainStation.departureTime',
+          from_line_train_stations.arrival_time AS 'policePeople.TrainRunPolicePerson.fromStation.LineTrainStation.arrivalTime',
+          train_run_police_people.to_station_id AS 'policePeople.TrainRunPolicePerson.toStationId',
+          to_stations.id AS 'policePeople.TrainRunPolicePerson.toStation.id',
+          to_stations.name AS 'policePeople.TrainRunPolicePerson.toStation.name',
+          to_line_train_stations.departure_time AS 'policePeople.TrainRunPolicePerson.toStation.LineTrainStation.departureTime',
+          to_line_train_stations.arrival_time AS 'policePeople.TrainRunPolicePerson.toStation.LineTrainStation.arrivalTime'
+      FROM
+          train_run_revisions
               JOIN
-            trains ON trains.id = train_run_revisions.train_id
+          trains ON trains.id = train_run_revisions.train_id
               JOIN
-            train_run_police_people ON train_run_police_people.train_run_id = train_run_revisions.id
+          train_run_police_people ON train_run_police_people.train_run_id = train_run_revisions.id
               JOIN
-            police_people ON police_people.id = train_run_police_people.police_person_id
+          police_people ON police_people.id = train_run_police_people.police_person_id
               JOIN
-            ranks ON ranks.id = police_people.rank_id
+          ranks ON ranks.id = police_people.rank_id
               JOIN
-            police_departments ON police_departments.id = police_people.police_department_id
+          police_departments ON police_departments.id = police_people.police_department_id
               JOIN
-            stations AS from_stations ON from_stations.id = train_run_police_people.from_station_id
+          stations AS from_stations ON from_stations.id = train_run_police_people.from_station_id
               JOIN
-            stations AS to_stations ON to_stations.id = train_run_police_people.to_station_id;
+          line_stations AS from_line_stations ON from_line_stations.station_id = from_stations.id
+              JOIN
+          line_train_stations AS from_line_train_stations ON from_line_train_stations.line_station_id = from_line_stations.id
+              AND from_line_train_stations.train_id = trains.id
+              JOIN
+          stations AS to_stations ON to_stations.id = train_run_police_people.to_station_id
+              JOIN
+          line_stations AS to_line_stations ON to_line_stations.station_id = to_stations.id
+              JOIN
+          line_train_stations AS to_line_train_stations ON to_line_train_stations.line_station_id = to_line_stations.id
+              AND to_line_train_stations.train_id = trains.id
+      WHERE
+          from_line_train_stations.line_id = to_line_train_stations.line_id
+              AND (from_line_train_stations.departure_time IS NOT NULL
+              OR from_line_train_stations.arrival_time IS NOT NULL)
+              AND (to_line_train_stations.arrival_time IS NOT NULL
+              OR to_line_train_stations.departure_time IS NOT NULL);
         `, {
           model: TrainRunRevision,
           mapToModel: true,
