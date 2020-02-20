@@ -297,7 +297,6 @@ export default class TrainController {
         \`policePeople\`.\`police_department_id\` = \`policePeople->policeDepartment\`.\`id\`
         WHERE
        \`TrainRun\`.\`deleted_at\` IS NULL
-       AND from_line_train_stations.line_id = to_line_train_stations.line_id
        AND (from_line_train_stations.departure_time IS NOT NULL
         OR from_line_train_stations.arrival_time IS NOT NULL)
         AND (to_line_train_stations.arrival_time IS NOT NULL
@@ -392,7 +391,6 @@ export default class TrainController {
         WHERE
        \`TrainRun\`.\`train_id\` = $train_id
        AND \`TrainRun\`.\`deleted_at\` IS NULL
-       AND from_line_train_stations.line_id = to_line_train_stations.line_id
        AND (from_line_train_stations.departure_time IS NOT NULL
         OR from_line_train_stations.arrival_time IS NOT NULL)
         AND (to_line_train_stations.arrival_time IS NOT NULL
@@ -483,8 +481,7 @@ export default class TrainController {
           line_train_stations AS to_line_train_stations ON to_line_train_stations.line_station_id = to_line_stations.id
               AND to_line_train_stations.train_id = trains.id
       WHERE
-          from_line_train_stations.line_id = to_line_train_stations.line_id
-              AND (from_line_train_stations.departure_time IS NOT NULL
+              (from_line_train_stations.departure_time IS NOT NULL
               OR from_line_train_stations.arrival_time IS NOT NULL)
               AND (to_line_train_stations.arrival_time IS NOT NULL
               OR to_line_train_stations.departure_time IS NOT NULL);
