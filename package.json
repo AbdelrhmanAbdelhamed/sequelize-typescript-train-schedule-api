@@ -21,7 +21,7 @@
     "cors": "^2.8.5",
     "decorate-express": "^2.0.4",
     "dotenv": "^8.2.0",
-    "express": "^4.16.2",
+    "express": "^4.17.3",
     "helmet": "^3.21.2",
     "jsonwebtoken": "^8.5.1",
     "moment": "^2.24.0",
